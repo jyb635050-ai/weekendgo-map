@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <title>WeekendGo · 那我走 — 菲律宾徒步 3D 地图</title>
+  <meta name="description" content="菲律宾国家徒步地图：3D 地形、60+ 座山峰徒步攻略。WeekendGo 那我走徒步组织出品。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>⛰️</text></svg>">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.min.css" rel="stylesheet">
+  <link href="css/main.css" rel="stylesheet">
+</head>
+<body>
+
+  <!-- ==================== 3D MAP ==================== -->
+  <div id="map" aria-label="Philippines 3D hiking map"></div>
+
+  <!-- ==================== HERO LANDING ==================== -->
+  <div id="hero" class="hero">
+    <div class="hero-aurora" aria-hidden="true">
+      <div class="aurora-blob aurora-1"></div>
+      <div class="aurora-blob aurora-2"></div>
+      <div class="aurora-blob aurora-3"></div>
+    </div>
+    <div class="hero-content">
+      <div class="hero-badge reveal" style="--d:0">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+        <span data-i18n="hero.badge">菲律宾国家徒步地图</span>
+      </div>
+      <h1 class="hero-title reveal" style="--d:1">
+        <span class="hero-title-en">WeekendGo</span>
+        <span class="hero-title-zh" data-i18n="hero.title">那我走</span>
+      </h1>
+      <p class="hero-tagline reveal" style="--d:2" data-i18n="hero.tagline">从科迪勒拉云海到棉兰老之巅，探索菲律宾群岛的每一条山脊。</p>
+      <div class="hero-stats reveal" style="--d:3">
+        <div class="hero-stat"><span class="hero-stat-num" id="stat-mountains">0</span><span class="hero-stat-label" data-i18n="hero.statMountains">座山峰</span></div>
+        <div class="hero-stat-div"></div>
+        <div class="hero-stat"><span class="hero-stat-num" id="stat-regions">0</span><span class="hero-stat-label" data-i18n="hero.statRegions">个地区</span></div>
+        <div class="hero-stat-div"></div>
+        <div class="hero-stat"><span class="hero-stat-num" id="stat-highest">0</span><span class="hero-stat-label" data-i18n="hero.statHighest">最高海拔 (m)</span></div>
+      </div>
+      <button id="hero-cta" class="hero-cta reveal" style="--d:4">
+        <span data-i18n="hero.cta">开始探索</span>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+      </button>
+      <p class="hero-hint reveal" style="--d:5" data-i18n="hero.hint">右键拖动旋转 · 滚轮缩放 · 点击山峰查看攻略</p>
+    </div>
+  </div>
+
+  <!-- ==================== TOP BAR ==================== -->
+  <header id="topbar" class="topbar glass" aria-hidden="true">
+    <div class="topbar-brand" id="brand-home" role="button" tabindex="0">
+      <div class="brand-mark">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
+      </div>
+      <div class="brand-text">
+        <span class="brand-en">WeekendGo</span>
+        <span class="brand-zh" data-i18n="brand.zh">那我走 · 菲律宾徒步</span>
+      </div>
+    </div>
+
+    <div class="topbar-search" id="search-box">
+      <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
+      <input id="search-input" type="search" autocomplete="off" data-i18n-placeholder="search.placeholder" placeholder="搜索山峰…" aria-label="Search mountains">
+      <div id="search-results" class="search-results glass" hidden></div>
+    </div>
+
+    <div class="topbar-filters">
+      <div class="filter-select-wrap">
+        <select id="filter-region" class="filter-select" aria-label="Region filter">
+          <option value="all" data-i18n="filter.allRegions">全部地区</option>
+        </select>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>
+      </div>
+      <div class="filter-chips" id="filter-difficulty" role="group" aria-label="Difficulty filter">
+        <button class="chip active" data-diff="all" data-i18n="filter.diffAll">全部</button>
+        <button class="chip chip-easy" data-diff="easy" data-i18n="filter.diffEasy">休闲 1–3</button>
+        <button class="chip chip-mid" data-diff="mid" data-i18n="filter.diffMid">进阶 4–6</button>
+        <button class="chip chip-hard" data-diff="hard" data-i18n="filter.diffHard">挑战 7–9</button>
+      </div>
+    </div>
+
+    <div class="topbar-actions">
+      <button id="btn-list" class="icon-btn" aria-label="Mountain list" title="山峰列表">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
+      </button>
+      <button id="btn-lang" class="lang-btn" aria-label="Switch language">EN</button>
+      <button id="btn-theme" class="icon-btn" aria-label="Toggle dark mode">
+        <svg class="icon-sun" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.41 1.41m11.32 11.32 1.41 1.41M2 12h2m16 0h2M4.93 19.07l1.41-1.41M17.66 6.34l1.41-1.41"/></svg>
+        <svg class="icon-moon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3a6 6 0 0 0 9 9 9 9 0 1 1-9-9Z"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ==================== MOUNTAIN LIST DRAWER ==================== -->
+  <aside id="list-drawer" class="list-drawer glass" aria-hidden="true">
+    <div class="drawer-head">
+      <h2 data-i18n="list.title">山峰列表</h2>
+      <span id="list-count" class="list-count">0</span>
+      <button class="icon-btn drawer-close" id="btn-list-close" aria-label="Close list">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="drawer-body" id="list-body"></div>
+  </aside>
+
+  <!-- ==================== DETAIL PANEL ==================== -->
+  <section id="detail" class="detail glass" aria-hidden="true">
+    <div class="detail-topo" aria-hidden="true"></div>
+    <button class="icon-btn detail-close" id="btn-detail-close" aria-label="Close detail">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+    </button>
+    <div class="detail-scroll" id="detail-body"><!-- injected --></div>
+  </section>
+
+  <!-- ==================== MAP HUD (bottom-right helpers) ==================== -->
+  <div id="hud" class="hud" aria-hidden="true">
+    <button id="btn-orbit" class="hud-btn glass" title="环绕视角" aria-label="Orbit camera">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21.5 12a9.5 4.5 0 1 1-19 0 9.5 4.5 0 0 1 19 0Z"/><circle cx="12" cy="12" r="2.5"/></svg>
+    </button>
+    <button id="btn-home-view" class="hud-btn glass" title="全国视角" aria-label="Reset view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10.5 12 3l9 7.5"/><path d="M5 9.5V21h14V9.5"/></svg>
+    </button>
+  </div>
+
+  <!-- ==================== MAP HOVER TIP ==================== -->
+  <div id="map-tip" class="map-tip" hidden></div>
+
+  <!-- ==================== DIFFICULTY LEGEND ==================== -->
+  <div id="legend" class="legend glass ui-hidden" aria-hidden="true">
+    <span class="legend-item"><i style="background:#22C55E"></i><span data-i18n="legend.easy">休闲 1–3</span></span>
+    <span class="legend-item"><i style="background:#F97316"></i><span data-i18n="legend.mid">进阶 4–6</span></span>
+    <span class="legend-item"><i style="background:#EF4444"></i><span data-i18n="legend.hard">挑战 7–8</span></span>
+    <span class="legend-item"><i style="background:#A855F7"></i><span data-i18n="legend.extreme">极限 9</span></span>
+  </div>
+
+  <!-- ==================== TOAST ==================== -->
+  <div id="toast" class="toast glass" role="status" aria-live="polite" hidden></div>
+
+  <script src="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.min.js"></script>
+  <script src="js/i18n.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
