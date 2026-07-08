@@ -6,7 +6,9 @@
 
 /* ---------- constants ---------- */
 const HOME_VIEW = { center: [121.9, 11.8], zoom: 5.55, pitch: 42, bearing: -10 };
-const INTRO_VIEW = { center: [121.9, 10.5], zoom: 4.1, pitch: 0, bearing: 0 };
+const INTRO_VIEW = { center: [121.9, 11.2], zoom: 4.85, pitch: 0, bearing: 0 };
+const PH_BOUNDS = [[110.0, 1.5], [135.0, 24.5]];   // keep the camera on the Philippines
+const SELECT_VIEW = { zoom: 11.6, pitch: 60 };
 const REGIONS = ["cordillera", "central-luzon", "calabarzon", "bicol", "visayas", "mindanao", "islands"];
 
 const DIFF_COLORS = {
@@ -65,6 +67,10 @@ function applyTheme(theme) {
     map.setPaintProperty("sat", "raster-brightness-max", theme === "dark" ? 0.88 : 1.0);
     map.setPaintProperty("sat", "raster-saturation", theme === "dark" ? -0.12 : 0);
   }
+  if (map && map.getLayer("ph-mask")) {
+    map.setPaintProperty("ph-mask", "fill-color", theme === "dark" ? "#070C18" : "#EFE4D3");
+    map.setPaintProperty("ph-outline", "line-color", theme === "dark" ? "#22D3EE" : "#0891B2");
+  }
 }
 
 /* ============================================================
@@ -77,10 +83,12 @@ function initMap() {
     zoom: INTRO_VIEW.zoom,
     pitch: INTRO_VIEW.pitch,
     bearing: INTRO_VIEW.bearing,
-    minZoom: 3.5,
-    maxZoom: 16.4,
-    maxPitch: 80,
+    minZoom: 4.6,
+    maxZoom: 15.8,
+    maxPitch: 72,
+    maxBounds: PH_BOUNDS,
     hash: false,
+    fadeDuration: 150,
     attributionControl: { compact: true },
     style: {
       version: 8,
@@ -98,7 +106,7 @@ function initMap() {
           tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
           tileSize: 256,
           encoding: "terrarium",
-          maxzoom: 14,
+          maxzoom: 12,
           attribution: "Terrain: Mapzen/AWS Open Data",
         },
         hills: {
@@ -106,7 +114,7 @@ function initMap() {
           tiles: ["https://s3.amazonaws.com/elevation-tiles-prod/terrarium/{z}/{x}/{y}.png"],
           tileSize: 256,
           encoding: "terrarium",
-          maxzoom: 14,
+          maxzoom: 12,
         },
       },
       layers: [
@@ -135,9 +143,17 @@ function initMap() {
   });
 
   map.touchZoomRotate.enableRotation();
+  map.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true }), "bottom-right");
   map.on("dragstart", stopOrbit);
   map.on("wheel", stopOrbit);
   map.on("error", (e) => console.warn("[map]", e && e.error && e.error.message));
+
+  // clicking empty map closes the detail panel
+  map.on("click", (e) => {
+    if (!map.getLayer("peaks-dot")) return;
+    const hits = map.queryRenderedFeatures(e.point, { layers: ["peaks-dot"] });
+    if (!hits.length && $("#detail").classList.contains("open")) closeDetail();
+  });
 
   mapReady = new Promise((resolve) => map.on("load", resolve));
   map.on("load", () => {
@@ -150,7 +166,7 @@ function orbitFrame(ts) {
   if (!orbiting) return;
   if (orbitPrevTs) {
     const dt = ts - orbitPrevTs;
-    map.setBearing(map.getBearing() + dt * 0.004);
+    map.setBearing(map.getBearing() + dt * 0.0026);
   }
   orbitPrevTs = ts;
   requestAnimationFrame(orbitFrame);
@@ -187,6 +203,29 @@ function peaksGeoJSON() {
       },
     })),
   };
+}
+
+/* Everything outside the Philippines is dimmed away; a soft outline frames the country. */
+function buildMaskLayers(ph) {
+  const dark = document.documentElement.dataset.theme === "dark";
+  map.addSource("ph-mask", { type: "geojson", data: ph.mask });
+  map.addSource("ph-outline", { type: "geojson", data: ph.outline });
+  map.addLayer({
+    id: "ph-mask", type: "fill", source: "ph-mask",
+    paint: {
+      "fill-color": dark ? "#070C18" : "#EFE4D3",
+      "fill-opacity": ["interpolate", ["linear"], ["zoom"], 4.6, 0.94, 6.5, 0.82, 8, 0.4, 9.5, 0],
+    },
+  });
+  map.addLayer({
+    id: "ph-outline", type: "line", source: "ph-outline",
+    paint: {
+      "line-color": dark ? "#22D3EE" : "#0891B2",
+      "line-width": ["interpolate", ["linear"], ["zoom"], 4.6, 1.1, 9, 0.5],
+      "line-opacity": ["interpolate", ["linear"], ["zoom"], 4.6, 0.5, 8, 0.25, 9.5, 0],
+      "line-blur": 0.6,
+    },
+  });
 }
 
 const activeCase = (on, off) => ["case", ["boolean", ["feature-state", "active"], false], on, off];
@@ -301,6 +340,7 @@ function applyFilters() {
 /* ============================================================
    LIST DRAWER
    ============================================================ */
+let listAnimated = false;
 function renderList(vis) {
   const body = $("#list-body");
   $("#list-count").textContent = vis.length;
@@ -308,9 +348,11 @@ function renderList(vis) {
     body.innerHTML = `<div class="list-empty">${esc(t("list.empty")).replace(/\n/g, "<br>")}</div>`;
     return;
   }
+  const animCls = listAnimated ? "no-anim" : "";
+  listAnimated = true;
   const sorted = [...vis].sort((a, b) => b.elevation_m - a.elevation_m);
   body.innerHTML = sorted.map((m, i) => `
-    <button class="m-card ${m.id === activeId ? "active" : ""}" data-id="${esc(m.id)}" style="--i:${Math.min(i, 20)}">
+    <button class="m-card ${m.id === activeId ? "active" : ""} ${animCls}" data-id="${esc(m.id)}" style="--i:${Math.min(i, 20)}">
       <div class="m-card-bar" style="background:${diffColor(m.difficulty)}"></div>
       <div class="m-card-main">
         <div class="m-card-name">${esc(loc(m.name))}</div>
@@ -435,13 +477,13 @@ function flyToMountain(m) {
   stopOrbit();
   map.flyTo({
     center: m.coords,
-    zoom: 12.4,
-    pitch: 66,
-    bearing: (map.getBearing() + 45) % 360,
-    duration: prefersReducedMotion ? 0 : 3000,
+    zoom: SELECT_VIEW.zoom,
+    pitch: SELECT_VIEW.pitch,
+    bearing: (map.getBearing() + 30) % 360,
+    duration: prefersReducedMotion ? 0 : 2200,
+    curve: 1.32,
     essential: true,
   });
-  map.once("moveend", () => { if (activeId === m.id) startOrbit(); });
 }
 
 function selectMountain(id) {
@@ -534,9 +576,24 @@ function bindSearch() {
   });
 }
 
+/* ---------- responsive filter placement ---------- */
+const narrowMQ = window.matchMedia("(max-width: 1120px)");
+function placeFilters() {
+  const filters = document.querySelector(".topbar-filters");
+  if (!filters) return;
+  if (narrowMQ.matches) {
+    $("#drawer-filters").appendChild(filters);
+  } else {
+    const topbar = $("#topbar");
+    topbar.insertBefore(filters, topbar.querySelector(".topbar-actions"));
+  }
+}
+
 /* ---------- events ---------- */
 function bindUI() {
   $("#hero-cta").addEventListener("click", dismissHero);
+  placeFilters();
+  narrowMQ.addEventListener("change", placeFilters);
 
   $("#btn-lang").addEventListener("click", () => setLang(LANG === "zh" ? "en" : "zh"));
   $("#btn-theme").addEventListener("click", () =>
@@ -596,8 +653,8 @@ function dismissHero() {
   hero.classList.add("hero-hidden");
   hero.setAttribute("aria-hidden", "true");
   revealUI();
-  map.flyTo({ ...HOME_VIEW, duration: prefersReducedMotion ? 0 : 5000, essential: true, curve: 1.28 });
-  setTimeout(() => { hero.remove(); }, 1200);
+  map.flyTo({ ...HOME_VIEW, duration: prefersReducedMotion ? 0 : 3000, essential: true, curve: 1.2 });
+  setTimeout(() => { hero.remove(); }, 1000);
 }
 
 function fillHeroStats() {
@@ -615,11 +672,16 @@ function fillHeroStats() {
   initMap();
   bindUI();
 
+  let phBoundary = null;
   try {
-    const res = await fetch("data/mountains.json");
+    const [res, phRes] = await Promise.all([
+      fetch("data/mountains.json"),
+      fetch("data/ph.json").catch(() => null),
+    ]);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     mountains = data.mountains || [];
+    if (phRes && phRes.ok) phBoundary = await phRes.json();
   } catch (err) {
     console.error("[data]", err);
     toast(t("toast.loadFail"), 6000);
@@ -630,25 +692,33 @@ function fillHeroStats() {
   fillHeroStats();
   renderList(visibleMountains());
 
-  await mapReady;
-  buildPeakLayers();
-  applyFilters();
-
   // deep links: ?m=<mountain-id> jumps straight to a mountain; ?nohero=1 skips the intro
   const qp = new URLSearchParams(location.search);
-  if (qp.has("m") || qp.has("nohero")) {
+  const deepLink = qp.has("m") || qp.has("nohero");
+  if (deepLink) {
     const hero = $("#hero");
     if (hero) hero.remove();
     revealUI();
     const target = mountains.find((x) => x.id === qp.get("m"));
     if (target) {
-      map.jumpTo({ center: target.coords, zoom: 12.4, pitch: 66, bearing: 35 });
+      map.jumpTo({ center: target.coords, zoom: SELECT_VIEW.zoom, pitch: SELECT_VIEW.pitch, bearing: 35 });
+    } else {
+      map.jumpTo(HOME_VIEW);
+    }
+  }
+
+  await mapReady;
+  if (phBoundary) buildMaskLayers(phBoundary);
+  buildPeakLayers();
+  applyFilters();
+
+  if (deepLink) {
+    const target = mountains.find((x) => x.id === qp.get("m"));
+    if (target) {
       setActivePeak(target.id);
       renderDetail(target);
       openDetail();
       highlightActiveCard();
-    } else {
-      map.jumpTo(HOME_VIEW);
     }
   }
 })();
