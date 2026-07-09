@@ -25,6 +25,10 @@ let mapReady;            // promise resolved on map 'load'
 let mountains = [];
 let activeId = null;
 let hoverId = null;
+let trailIds = new Set();     // mountains that have data/trails/{id}.json
+const trailCache = {};
+let trailToken = 0;
+const wxCache = {};
 let orbiting = false;
 let orbitPrevTs = 0;
 const filters = { q: "", region: "all", diff: "all" };
@@ -400,6 +404,12 @@ function renderDetail(m) {
     <h2 class="d-name">${esc(loc(m.name))}</h2>
     <div class="d-name-alt">${esc(LANG === "zh" ? (m.name.en || "") : (m.name.zh || ""))}</div>
 
+    ${(m.photos && m.photos.length) ? `<div class="d-photos">${m.photos.map((p) => `
+      <figure class="d-photo">
+        <a href="${esc(p.p)}" target="_blank" rel="noopener"><img src="${esc(p.u)}" alt="${esc(loc(m.name))}" loading="lazy" onerror="this.closest('figure').remove()"></a>
+        <figcaption>© ${esc(p.by)} · ${esc(p.lic)}</figcaption>
+      </figure>`).join("")}</div>` : ""}
+
     <div class="d-badges">
       <span class="badge badge-diff" style="background:${dc}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="m8 3 4 8 5-5 5 15H2L8 3z"/></svg>
@@ -427,6 +437,16 @@ function renderDetail(m) {
         <div class="d-stat-val" style="font-size:14.5px;line-height:1.35">${m.duration ? esc(loc(m.duration)) : tbc}</div>
         <div class="d-stat-label">${esc(t("d.duration"))}</div>
       </div>
+    </div>
+
+    <div class="d-section" id="trail-sec" hidden>
+      <h3>${esc(t("d.trail"))}</h3>
+      <div id="trail-body"></div>
+    </div>
+
+    <div class="d-section">
+      <h3>${esc(t("wx.title"))}</h3>
+      <div class="wx" id="wx-box"><div class="wx-skel"></div><div class="wx-skel"></div><div class="wx-skel"></div></div>
     </div>
 
     ${m.summary ? `<div class="d-section"><h3>${esc(t("d.summary"))}</h3><p>${esc(loc(m.summary))}</p></div>` : ""}
@@ -467,7 +487,163 @@ function closeDetail() {
   $("#detail").setAttribute("aria-hidden", "true");
   setActivePeak(null);
   stopOrbit();
+  clearTrailLayers();
   highlightActiveCard();
+}
+
+/* ============================================================
+   WEATHER (Open-Meteo, downscaled to summit elevation)
+   ============================================================ */
+const WX_ICONS = {
+  sun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2m0 15v2M4.8 4.8l1.4 1.4m11.6 11.6 1.4 1.4M2.5 12h2m15 0h2M4.8 19.2l1.4-1.4M17.8 6.2l1.4-1.4"/></svg>',
+  psun: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="8.5" cy="8" r="3"/><path d="M8.5 1.8v1.4M2.3 8h1.4M4.1 3.6l1 1M13 3.6l-1 1"/><path d="M9 21h8.5a3.5 3.5 0 0 0 .6-6.95 5 5 0 0 0-9.6-1.4A4 4 0 0 0 9 21Z"/></svg>',
+  cloud: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 19h11a4 4 0 0 0 .8-7.92 6 6 0 0 0-11.6-1.7A4.5 4.5 0 0 0 6.5 19Z"/></svg>',
+  fog: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 9h16M2.5 13h19M5 17h14"/></svg>',
+  rain: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 15h11a4 4 0 0 0 .8-7.92 6 6 0 0 0-11.6-1.7A4.5 4.5 0 0 0 6.5 15Z"/><path d="M8 18.5l-1 2.5m5.5-2.5-1 2.5m5.5-2.5-1 2.5"/></svg>',
+  snow: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6.5 15h11a4 4 0 0 0 .8-7.92 6 6 0 0 0-11.6-1.7A4.5 4.5 0 0 0 6.5 15Z"/><path d="M8 19h.01M12 21h.01M16 19h.01"/></svg>',
+  storm: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6.5 14h11a4 4 0 0 0 .8-7.92 6 6 0 0 0-11.6-1.7A4.5 4.5 0 0 0 6.5 14Z"/><path d="m12.5 15-2.5 4h3l-2 3.5"/></svg>',
+};
+const WX_DROP = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3.5s5.5 6.2 5.5 10a5.5 5.5 0 0 1-11 0c0-3.8 5.5-10 5.5-10Z"/></svg>';
+
+function wmoInfo(code) {
+  if (code === 0) return { key: "sun", icon: "sun" };
+  if (code <= 2) return { key: "psun", icon: "psun" };
+  if (code === 3) return { key: "cloud", icon: "cloud" };
+  if (code === 45 || code === 48) return { key: "fog", icon: "fog" };
+  if (code >= 51 && code <= 57) return { key: "drizzle", icon: "rain" };
+  if (code >= 61 && code <= 67) return { key: "rain", icon: "rain" };
+  if (code >= 71 && code <= 77) return { key: "snow", icon: "snow" };
+  if (code >= 80 && code <= 82) return { key: "shower", icon: "rain" };
+  if (code >= 85 && code <= 86) return { key: "snow", icon: "snow" };
+  if (code >= 95) return { key: "storm", icon: "storm" };
+  return { key: "cloud", icon: "cloud" };
+}
+
+async function loadWeather(m) {
+  const paint = (html) => {
+    const box = $("#wx-box");
+    if (box && activeId === m.id) box.innerHTML = html;
+  };
+  try {
+    let data = wxCache[m.id];
+    if (!data) {
+      const [lng, lat] = m.coords;
+      const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lng}&elevation=${m.elevation_m}` +
+        `&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=Asia%2FManila&forecast_days=3`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      data = await res.json();
+      wxCache[m.id] = data;
+    }
+    const d = data.daily;
+    const labels = [t("wx.today"), t("wx.tomorrow"), t("wx.day2")];
+    paint(d.time.map((_, i) => {
+      const w = wmoInfo(d.weather_code[i]);
+      const rain = d.precipitation_probability_max ? d.precipitation_probability_max[i] : null;
+      return `<div class="wx-day">
+        <span class="wx-label">${esc(labels[i])}</span>
+        <span class="wx-icon">${WX_ICONS[w.icon]}</span>
+        <span class="wx-desc">${esc(t("wx." + w.key))}</span>
+        <span class="wx-temp">${Math.round(d.temperature_2m_max[i])}°<small>/${Math.round(d.temperature_2m_min[i])}°</small></span>
+        <span class="wx-rain">${WX_DROP}${rain == null ? "–" : rain}%</span>
+      </div>`;
+    }).join(""));
+  } catch (err) {
+    paint(`<div class="wx-fail">${esc(t("wx.fail"))}</div>`);
+  }
+}
+
+/* ============================================================
+   TRAILS (OSM route + elevation profile)
+   ============================================================ */
+const TRAIL_LAYERS = ["trail-net", "trail-route-glow", "trail-route"];
+
+function clearTrailLayers() {
+  TRAIL_LAYERS.forEach((l) => { if (map.getLayer(l)) map.removeLayer(l); });
+  ["trail-net", "trail-route"].forEach((s) => { if (map.getSource(s)) map.removeSource(s); });
+}
+
+function addTrailLayers(tr) {
+  clearTrailLayers();
+  const before = map.getLayer("peaks-glow") ? "peaks-glow" : undefined;
+  map.addSource("trail-net", {
+    type: "geojson",
+    data: { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: tr.net || [] } },
+  });
+  map.addSource("trail-route", {
+    type: "geojson",
+    attribution: "Trails © OpenStreetMap contributors",
+    data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: tr.route } },
+  });
+  map.addLayer({
+    id: "trail-net", type: "line", source: "trail-net",
+    paint: { "line-color": "rgba(255,255,255,0.38)", "line-width": 1.1, "line-dasharray": [2, 2.5] },
+  }, before);
+  map.addLayer({
+    id: "trail-route-glow", type: "line", source: "trail-route",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#FB923C", "line-width": 8, "line-blur": 4, "line-opacity": 0.4 },
+  }, before);
+  map.addLayer({
+    id: "trail-route", type: "line", source: "trail-route",
+    layout: { "line-cap": "round", "line-join": "round" },
+    paint: { "line-color": "#FB923C", "line-width": 2.6 },
+  }, before);
+}
+
+function profileSVG(tr) {
+  const ele = tr.ele || [];
+  if (ele.length < 5) return "";
+  const W = 340, H = 118, L = 36, R = 8, T = 12, B = 20;
+  const min = Math.min(...ele), max = Math.max(...ele);
+  const span = Math.max(max - min, 10);
+  const x = (i) => L + (W - L - R) * i / (ele.length - 1);
+  const y = (v) => T + (H - T - B) * (1 - (v - min) / span);
+  let d = `M${x(0).toFixed(1)},${y(ele[0]).toFixed(1)}`;
+  for (let i = 1; i < ele.length; i++) d += `L${x(i).toFixed(1)},${y(ele[i]).toFixed(1)}`;
+  const area = `${d}L${x(ele.length - 1).toFixed(1)},${H - B}L${x(0).toFixed(1)},${H - B}Z`;
+  return `<svg viewBox="0 0 ${W} ${H}" class="pf-svg" role="img" aria-label="elevation profile">
+    <defs><linearGradient id="pf-g" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FB923C" stop-opacity="0.4"/>
+      <stop offset="1" stop-color="#FB923C" stop-opacity="0"/>
+    </linearGradient></defs>
+    <line x1="${L}" y1="${y(max)}" x2="${W - R}" y2="${y(max)}" class="pf-grid"/>
+    <line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" class="pf-grid"/>
+    <path d="${area}" fill="url(#pf-g)"/>
+    <path d="${d}" fill="none" stroke="#FB923C" stroke-width="2" stroke-linejoin="round"/>
+    <text x="${L - 5}" y="${y(max) + 4}" class="pf-lb" text-anchor="end">${max}</text>
+    <text x="${L - 5}" y="${H - B + 4}" class="pf-lb" text-anchor="end">${min}</text>
+    <text x="${L}" y="${H - 5}" class="pf-lb">0</text>
+    <text x="${W - R}" y="${H - 5}" class="pf-lb" text-anchor="end">${tr.dist_km} km</text>
+  </svg>`;
+}
+
+async function showTrail(m) {
+  clearTrailLayers();
+  if (!trailIds.has(m.id)) return;
+  const token = ++trailToken;
+  let tr = trailCache[m.id];
+  if (!tr) {
+    try {
+      const res = await fetch(`data/trails/${m.id}.json`);
+      if (!res.ok) return;
+      tr = await res.json();
+      trailCache[m.id] = tr;
+    } catch (err) { return; }
+  }
+  if (token !== trailToken || activeId !== m.id) return;   // superseded selection
+  addTrailLayers(tr);
+  const sec = $("#trail-sec");
+  if (sec) {
+    sec.hidden = false;
+    sec.querySelector("#trail-body").innerHTML = `
+      <div class="pf-stats">
+        <span><b>${tr.dist_km}</b> km · ${esc(t("d.trailOneWay"))}</span>
+        <span><b>+${tr.ascent_m.toLocaleString()}</b> m · ${esc(t("d.trailAscent"))}</span>
+      </div>
+      ${profileSVG(tr)}
+      <p class="pf-note">${esc(t("d.trailNote"))}</p>`;
+  }
 }
 
 /* ============================================================
@@ -493,6 +669,8 @@ function selectMountain(id) {
   renderDetail(m);
   openDetail();
   highlightActiveCard();
+  showTrail(m);
+  loadWeather(m);
   flyToMountain(m);
   // on mobile, close the list sheet so the map + detail are visible
   if (window.matchMedia("(max-width: 860px)").matches) setDrawer(false);
@@ -641,7 +819,7 @@ function bindUI() {
     applyFilters();
     if (activeId) {
       const m = mountains.find((x) => x.id === activeId);
-      if (m) renderDetail(m);
+      if (m) { renderDetail(m); showTrail(m); loadWeather(m); }
     }
   });
 }
@@ -674,14 +852,16 @@ function fillHeroStats() {
 
   let phBoundary = null;
   try {
-    const [res, phRes] = await Promise.all([
+    const [res, phRes, trRes] = await Promise.all([
       fetch("data/mountains.json"),
       fetch("data/ph.json").catch(() => null),
+      fetch("data/trails/index.json").catch(() => null),
     ]);
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     mountains = data.mountains || [];
     if (phRes && phRes.ok) phBoundary = await phRes.json();
+    if (trRes && trRes.ok) trailIds = new Set(await trRes.json());
   } catch (err) {
     console.error("[data]", err);
     toast(t("toast.loadFail"), 6000);
@@ -719,6 +899,8 @@ function fillHeroStats() {
       renderDetail(target);
       openDetail();
       highlightActiveCard();
+      showTrail(target);
+      loadWeather(target);
     }
   }
 })();

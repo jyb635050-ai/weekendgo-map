@@ -72,6 +72,18 @@ const I18N = {
     "toast.orbitOn": "环绕模式已开启 — 拖动地图可退出",
     "toast.loading": "正在加载山峰数据…",
     "toast.loadFail": "山峰数据加载失败，请刷新重试",
+
+    "wx.title": "天气预报 · 按峰顶海拔",
+    "wx.today": "今天", "wx.tomorrow": "明天", "wx.day2": "后天",
+    "wx.fail": "天气暂不可用",
+    "wx.sun": "晴", "wx.psun": "多云间晴", "wx.cloud": "阴",
+    "wx.fog": "雾", "wx.drizzle": "毛毛雨", "wx.rain": "雨",
+    "wx.shower": "阵雨", "wx.snow": "雪", "wx.storm": "雷暴",
+
+    "d.trail": "轨迹与海拔剖面",
+    "d.trailOneWay": "单程",
+    "d.trailAscent": "累计爬升",
+    "d.trailNote": "轨迹来自 OpenStreetMap 社区数据，仅供参考；请以实地路标与向导为准。",
   },
 
   en: {
@@ -142,6 +154,18 @@ const I18N = {
     "toast.orbitOn": "Orbit mode on — drag the map to exit",
     "toast.loading": "Loading mountain data…",
     "toast.loadFail": "Failed to load mountain data — please refresh",
+
+    "wx.title": "Weather · at summit elevation",
+    "wx.today": "Today", "wx.tomorrow": "Tomorrow", "wx.day2": "Day 3",
+    "wx.fail": "Weather unavailable",
+    "wx.sun": "Clear", "wx.psun": "Partly cloudy", "wx.cloud": "Overcast",
+    "wx.fog": "Fog", "wx.drizzle": "Drizzle", "wx.rain": "Rain",
+    "wx.shower": "Showers", "wx.snow": "Snow", "wx.storm": "Thunderstorm",
+
+    "d.trail": "Trail & elevation",
+    "d.trailOneWay": "one-way",
+    "d.trailAscent": "ascent",
+    "d.trailNote": "Trail from OpenStreetMap community data — for reference only; follow signage and local guides.",
   },
 };
 
