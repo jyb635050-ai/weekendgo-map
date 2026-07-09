@@ -12,8 +12,8 @@
         "zh": "普拉格山"
       },
       "coords": [
-        120.8875,
-        16.5828
+        120.89879,
+        16.59773
       ],
       "elevation_m": 2926,
       "region_key": "cordillera",
@@ -238,8 +238,8 @@
         "zh": "皮纳图博火山"
       },
       "coords": [
-        120.3483,
-        15.1431
+        120.34906,
+        15.14456
       ],
       "elevation_m": 960,
       "region_key": "central-luzon",
@@ -316,8 +316,8 @@
         "zh": "阿拉亚特山"
       },
       "coords": [
-        120.742,
-        15.2
+        120.74311,
+        15.20129
       ],
       "elevation_m": 1030,
       "region_key": "central-luzon",
@@ -394,8 +394,8 @@
         "zh": "塔拉克山脊（马里韦莱斯山）"
       },
       "coords": [
-        120.5,
-        14.506
+        120.49064,
+        14.50608
       ],
       "elevation_m": 1130,
       "region_key": "central-luzon",
@@ -471,8 +471,8 @@
         "zh": "巴图劳山"
       },
       "coords": [
-        120.8011,
-        14.0408
+        120.80238,
+        14.03994
       ],
       "elevation_m": 811,
       "region_key": "calabarzon",
@@ -629,8 +629,8 @@
         "zh": "马库洛特山"
       },
       "coords": [
-        121.0333,
-        13.9167
+        121.0517,
+        13.92087
       ],
       "elevation_m": 930,
       "region_key": "calabarzon",
@@ -706,8 +706,8 @@
         "zh": "达拉伊坦山"
       },
       "coords": [
-        121.4388,
-        14.6135
+        121.43797,
+        14.61615
       ],
       "elevation_m": 739,
       "region_key": "calabarzon",
@@ -783,8 +783,8 @@
         "zh": "马基灵山"
       },
       "coords": [
-        121.2,
-        14.13
+        121.19445,
+        14.13522
       ],
       "elevation_m": 1090,
       "region_key": "calabarzon",
@@ -860,8 +860,8 @@
         "zh": "巴纳豪山"
       },
       "coords": [
-        121.488,
-        14.066
+        121.49232,
+        14.06753
       ],
       "elevation_m": 2158,
       "region_key": "calabarzon",
@@ -1179,8 +1179,8 @@
         "zh": "塔利尼斯山（内格罗斯之角）"
       },
       "coords": [
-        123.1794,
-        9.25
+        123.17781,
+        9.24451
       ],
       "elevation_m": 1903,
       "region_key": "visayas",
@@ -1256,8 +1256,8 @@
         "zh": "吉丁吉丁山"
       },
       "coords": [
-        122.5678,
-        12.4139
+        122.56899,
+        12.41627
       ],
       "elevation_m": 2058,
       "region_key": "visayas",
@@ -1333,8 +1333,8 @@
         "zh": "阿波山"
       },
       "coords": [
-        125.2758,
-        7.0083
+        125.271,
+        6.98734
       ],
       "elevation_m": 2954,
       "region_key": "mindanao",
@@ -1410,8 +1410,8 @@
         "zh": "杜朗杜朗山"
       },
       "coords": [
-        124.9605,
-        8.09798
+        124.92388,
+        8.11704
       ],
       "elevation_m": 2938,
       "region_key": "mindanao",
@@ -1487,8 +1487,8 @@
         "zh": "希伯克-希伯克火山"
       },
       "coords": [
-        124.6681,
-        9.2006
+        124.67599,
+        9.19943
       ],
       "elevation_m": 1332,
       "region_key": "mindanao",
@@ -1565,8 +1565,8 @@
         "zh": "阿穆尧山"
       },
       "coords": [
-        120.95,
-        17.1667
+        121.1296,
+        17.0118
       ],
       "elevation_m": 2702,
       "region_key": "cordillera",
@@ -1628,8 +1628,8 @@
         "zh": "塔巴约克山"
       },
       "coords": [
-        120.88333,
-        16.7
+        120.88608,
+        16.68926
       ],
       "elevation_m": 2842,
       "region_key": "cordillera",
@@ -1691,8 +1691,8 @@
         "zh": "廷巴克山"
       },
       "coords": [
-        120.822,
-        16.626
+        120.8156,
+        16.6228
       ],
       "elevation_m": 2717,
       "region_key": "cordillera",
@@ -1762,8 +1762,8 @@
         "zh": "纳普劳安山"
       },
       "coords": [
-        121.1667,
-        16.8333
+        120.96055,
+        16.83071
       ],
       "elevation_m": 2642,
       "region_key": "cordillera",
@@ -1825,8 +1825,8 @@
         "zh": "基布甘环线"
       },
       "coords": [
-        120.655,
-        16.694
+        120.63219,
+        16.72655
       ],
       "elevation_m": 2105,
       "region_key": "cordillera",
@@ -1888,8 +1888,8 @@
         "zh": "圣托马斯山"
       },
       "coords": [
-        120.555,
-        16.336
+        120.56106,
+        16.33484
       ],
       "elevation_m": 2256,
       "region_key": "cordillera",
@@ -1951,8 +1951,8 @@
         "zh": "皮金甘山"
       },
       "coords": [
-        120.66,
-        16.35
+        120.74543,
+        16.23635
       ],
       "elevation_m": 1328,
       "region_key": "cordillera",
@@ -2162,8 +2162,8 @@
         "zh": "巴林基拉特山"
       },
       "coords": [
-        120.1836,
-        14.9082
+        120.12674,
+        14.85868
       ],
       "elevation_m": 1100,
       "region_key": "central-luzon",
@@ -2226,8 +2226,8 @@
         "zh": "五峰山"
       },
       "coords": [
-        120.17,
-        14.85
+        120.1624,
+        14.79121
       ],
       "elevation_m": 881,
       "region_key": "central-luzon",
@@ -2289,8 +2289,8 @@
         "zh": "萨马特山"
       },
       "coords": [
-        120.531,
-        14.594
+        120.50752,
+        14.60412
       ],
       "elevation_m": 553,
       "region_key": "central-luzon",
@@ -2446,8 +2446,8 @@
         "zh": "塔拉米坦山"
       },
       "coords": [
-        120.856,
-        14.081
+        120.75924,
+        14.10833
       ],
       "elevation_m": 630,
       "region_key": "calabarzon",
@@ -2513,8 +2513,8 @@
         "zh": "猪脊山"
       },
       "coords": [
-        120.8878,
-        13.6905
+        120.89794,
+        13.72659
       ],
       "elevation_m": 525,
       "region_key": "calabarzon",
@@ -2576,8 +2576,8 @@
         "zh": "马纳布峰"
       },
       "coords": [
-        121.06,
-        13.85
+        121.23613,
+        13.99377
       ],
       "elevation_m": 760,
       "region_key": "calabarzon",
@@ -2639,8 +2639,8 @@
         "zh": "马利普尼奥山"
       },
       "coords": [
-        121.185,
-        13.985
+        121.23972,
+        13.96325
       ],
       "elevation_m": 1005,
       "region_key": "calabarzon",
@@ -2698,8 +2698,8 @@
         "zh": "马拉米山"
       },
       "coords": [
-        120.72,
-        14.235
+        120.68583,
+        14.19861
       ],
       "elevation_m": 405,
       "region_key": "calabarzon",
@@ -2848,8 +2848,8 @@
         "zh": "巴拉格巴格山"
       },
       "coords": [
-        121.202,
-        14.766
+        121.18041,
+        14.82431
       ],
       "elevation_m": 777,
       "region_key": "calabarzon",
@@ -2925,8 +2925,8 @@
         "zh": "森布拉诺山"
       },
       "coords": [
-        121.3436,
-        14.5686
+        121.3659,
+        14.38508
       ],
       "elevation_m": 745,
       "region_key": "calabarzon",
@@ -2992,8 +2992,8 @@
         "zh": "巴托卢松山"
       },
       "coords": [
-        121.331,
-        14.588
+        121.31511,
+        14.63928
       ],
       "elevation_m": 780,
       "region_key": "calabarzon",
@@ -3055,8 +3055,8 @@
         "zh": "迈诺巴山"
       },
       "coords": [
-        121.372,
-        14.599
+        121.32612,
+        14.66261
       ],
       "elevation_m": 728,
       "region_key": "calabarzon",
@@ -3126,8 +3126,8 @@
         "zh": "伊萨罗格山"
       },
       "coords": [
-        123.35,
-        13.6667
+        123.373,
+        13.65822
       ],
       "elevation_m": 1966,
       "region_key": "bicol",
@@ -3283,8 +3283,8 @@
         "zh": "阿索格山"
       },
       "coords": [
-        123.455,
-        13.657
+        123.45083,
+        13.45834
       ],
       "elevation_m": 1140,
       "region_key": "bicol",
@@ -3356,8 +3356,8 @@
         "zh": "马贾斯山"
       },
       "coords": [
-        122.0783,
-        11.3814
+        122.16195,
+        11.38916
       ],
       "elevation_m": 2113,
       "region_key": "visayas",
@@ -3419,8 +3419,8 @@
         "zh": "南图德山"
       },
       "coords": [
-        122.089,
-        11.212
+        122.206,
+        11.26792
       ],
       "elevation_m": 2073,
       "region_key": "visayas",
@@ -3478,8 +3478,8 @@
         "zh": "曼达拉甘山"
       },
       "coords": [
-        123.08,
-        10.61
+        123.23579,
+        10.63717
       ],
       "elevation_m": 1880,
       "region_key": "visayas",
@@ -3551,8 +3551,8 @@
         "zh": "阿尔托峰"
       },
       "coords": [
-        124.7075,
-        11.1289
+        124.74269,
+        11.10408
       ],
       "elevation_m": 1332,
       "region_key": "visayas",
@@ -3624,8 +3624,8 @@
         "zh": "三玛丽亚山"
       },
       "coords": [
-        124.53,
-        11.63
+        124.46179,
+        11.65
       ],
       "elevation_m": 1315,
       "region_key": "visayas",
@@ -3683,8 +3683,8 @@
         "zh": "马农加尔山"
       },
       "coords": [
-        123.796,
-        10.474
+        123.8152,
+        10.45319
       ],
       "elevation_m": 1003,
       "region_key": "visayas",
@@ -3750,8 +3750,8 @@
         "zh": "基坦格拉德山"
       },
       "coords": [
-        124.7833,
-        8.1339
+        124.91608,
+        8.13966
       ],
       "elevation_m": 2899,
       "region_key": "mindanao",
@@ -3827,8 +3827,8 @@
         "zh": "卡拉通甘山"
       },
       "coords": [
-        124.801,
-        7.956
+        124.80269,
+        7.95509
       ],
       "elevation_m": 2824,
       "region_key": "mindanao",
@@ -3904,8 +3904,8 @@
         "zh": "马图图姆山"
       },
       "coords": [
-        125.1083,
-        6.3667
+        125.07618,
+        6.36004
       ],
       "elevation_m": 2293,
       "region_key": "mindanao",
@@ -3981,8 +3981,8 @@
         "zh": "帕克山 · 霍隆湖"
       },
       "coords": [
-        124.8922,
-        6.1133
+        124.8887,
+        6.10221
       ],
       "elevation_m": 1400,
       "region_key": "mindanao",
@@ -4058,8 +4058,8 @@
         "zh": "哈米吉坦山"
       },
       "coords": [
-        126.174,
-        6.745
+        126.18188,
+        6.74002
       ],
       "elevation_m": 1620,
       "region_key": "mindanao",
@@ -4135,8 +4135,8 @@
         "zh": "塔洛莫山"
       },
       "coords": [
-        125.408,
-        7.007
+        125.3169,
+        7.04097
       ],
       "elevation_m": 2674,
       "region_key": "mindanao",
@@ -4194,8 +4194,8 @@
         "zh": "哈尔孔山"
       },
       "coords": [
-        121.0319,
-        13.2658
+        120.99559,
+        13.26238
       ],
       "elevation_m": 2582,
       "region_key": "islands",
@@ -4274,8 +4274,8 @@
         "zh": "伊拉亚山"
       },
       "coords": [
-        121.9989,
-        20.4692
+        122.01159,
+        20.46668
       ],
       "elevation_m": 1009,
       "region_key": "islands",
@@ -4342,6 +4342,69 @@
           "by": "Ardie davocol",
           "lic": "CC BY-SA 3.0"
         }
+      ]
+    },
+    {
+      "id": "kalisungan",
+      "name": {
+        "en": "Mt. Kalisungan",
+        "zh": "卡利松安山"
+      },
+      "coords": [
+        121.34458,
+        14.14712
+      ],
+      "elevation_m": 630,
+      "region_key": "calabarzon",
+      "province": {
+        "en": "Calauan, Laguna",
+        "zh": "内湖省卡劳安"
+      },
+      "difficulty": 3,
+      "trail_class": "1-2",
+      "type": "minor",
+      "time_to_summit": {
+        "en": "2 h",
+        "zh": "约 2 小时"
+      },
+      "duration": {
+        "en": "Dayhike (~7 km round trip)",
+        "zh": "一日往返（约 7 公里）"
+      },
+      "jumpoff": {
+        "en": "Brgy. Lamot 2, Calauan, Laguna",
+        "zh": "Lamot 2 村（卡劳安）"
+      },
+      "summary": {
+        "en": "A short, honest climb above Calauan: plantation paths give way to a steep grassy push, ending on a breezy meadow summit facing Banahaw, Cristobal and the Seven Lakes of San Pablo.",
+        "zh": "卡劳安镇上方一座短小精悍的山：种植园小径接上一段陡直草坡，山顶是清风扑面的草甸，正对巴纳豪山、克里斯托瓦尔山与圣巴勃罗七湖。"
+      },
+      "highlights": [
+        {
+          "en": "Seven Lakes views",
+          "zh": "七湖眺望"
+        },
+        {
+          "en": "Meadow summit",
+          "zh": "草甸山顶"
+        },
+        {
+          "en": "Quick escape from Manila",
+          "zh": "马尼拉周边速登"
+        }
+      ],
+      "tips": {
+        "en": "Steep and exposed in the middle section — go early and bring a trekking pole for the loose descent. Register at the barangay hall; often paired with nearby Mt. Atimla.",
+        "zh": "中段陡且晒——趁早出发，下坡碎土建议带登山杖。在村委会登记；常与邻近的 Atimla 山连登。"
+      },
+      "best_season": {
+        "en": "Nov – Feb",
+        "zh": "11月 – 2月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "https://www.pinoymountaineer.com/2007/08/mt-kalisungan-760.html"
       ]
     }
   ]
