@@ -404,11 +404,21 @@ function renderDetail(m) {
     <h2 class="d-name">${esc(loc(m.name))}</h2>
     <div class="d-name-alt">${esc(LANG === "zh" ? (m.name.en || "") : (m.name.zh || ""))}</div>
 
-    ${(m.photos && m.photos.length) ? `<div class="d-photos">${m.photos.map((p) => `
+    ${(m.photos && m.photos.length) ? `<div class="d-photos-wrap${m.photos.length > 1 ? " multi" : ""}">
+      <div class="d-photos" id="d-photos">${m.photos.map((p) => `
       <figure class="d-photo">
         <a href="${esc(p.p)}" target="_blank" rel="noopener"><img src="${esc(p.u)}" alt="${esc(loc(m.name))}" loading="lazy" onerror="this.closest('figure').remove()"></a>
         <figcaption>© ${esc(p.by)} · ${esc(p.lic)}</figcaption>
-      </figure>`).join("")}</div>` : ""}
+      </figure>`).join("")}</div>
+      ${m.photos.length > 1 ? `
+      <button class="d-photo-arrow prev" id="photo-prev" aria-label="${esc(t("photo.prev"))}" hidden>
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m15 6-6 6 6 6"/></svg>
+      </button>
+      <button class="d-photo-arrow next" id="photo-next" aria-label="${esc(t("photo.next"))}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+      </button>
+      <div class="d-photo-dots">${m.photos.map((_, i) => `<span class="${i === 0 ? "on" : ""}"></span>`).join("")}</div>` : ""}
+    </div>` : ""}
 
     <div class="d-badges">
       <span class="badge badge-diff" style="background:${dc}">
@@ -479,6 +489,26 @@ function renderDetail(m) {
   `;
   const refly = $("#btn-refly");
   if (refly) refly.addEventListener("click", () => flyToMountain(m));
+
+  // photo carousel navigation
+  const strip = $("#d-photos");
+  if (strip && (m.photos || []).length > 1) {
+    const prev = $("#photo-prev"), next = $("#photo-next");
+    const dots = [...document.querySelectorAll(".d-photo-dots span")];
+    const step = () => {
+      const fig = strip.querySelector(".d-photo");
+      return fig ? fig.getBoundingClientRect().width + 9 : strip.clientWidth;
+    };
+    const sync = () => {
+      const idx = Math.round(strip.scrollLeft / step());
+      dots.forEach((d, i) => d.classList.toggle("on", i === idx));
+      if (prev) prev.hidden = strip.scrollLeft < 8;
+      if (next) next.hidden = strip.scrollLeft > strip.scrollWidth - strip.clientWidth - 8;
+    };
+    prev && prev.addEventListener("click", () => strip.scrollBy({ left: -step(), behavior: "smooth" }));
+    next && next.addEventListener("click", () => strip.scrollBy({ left: step(), behavior: "smooth" }));
+    strip.addEventListener("scroll", sync, { passive: true });
+  }
 }
 
 function openDetail() { $("#detail").classList.add("open"); $("#detail").setAttribute("aria-hidden", "false"); }

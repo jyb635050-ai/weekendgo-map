@@ -14,9 +14,11 @@ const I18N = {
     "hero.cta": "开始探索",
     "hero.hint": "右键拖动旋转 · 滚轮缩放 · 点击山峰查看攻略",
 
-    "brand.zh": "那我走 · 菲律宾徒步",
+    "brand.zh": "那我走 · 菲律宾徒步团",
     "search.placeholder": "搜索山峰…",
     "search.empty": "没有找到匹配的山峰",
+    "photo.prev": "上一张照片",
+    "photo.next": "下一张照片",
 
     "filter.allRegions": "全部地区",
     "filter.diffAll": "全部",
@@ -96,9 +98,11 @@ const I18N = {
     "hero.cta": "Start Exploring",
     "hero.hint": "Right-drag to rotate · Scroll to zoom · Click a peak for its guide",
 
-    "brand.zh": "Philippines Hiking Collective",
+    "brand.zh": "Philippines Hiking Group",
     "search.placeholder": "Search mountains…",
     "search.empty": "No mountains match your search",
+    "photo.prev": "Previous photo",
+    "photo.next": "Next photo",
 
     "filter.allRegions": "All regions",
     "filter.diffAll": "All",
