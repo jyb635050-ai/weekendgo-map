@@ -164,7 +164,7 @@ html[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { fi
 .hero-aurora { position: absolute; inset: -20%; filter: blur(70px); opacity: .55; }
 .aurora-blob { position: absolute; border-radius: 50%; mix-blend-mode: screen; }
 .aurora-1 { width: 55vw; height: 55vw; left: -8vw; top: -6vw;
-  background: radial-gradient(circle, #0E7490 0%, transparent 62%); animation: drift1 14s ease-in-out infinite alternate; }
+  background: radial-gradient(circle, #2F7D33 0%, transparent 62%); animation: drift1 14s ease-in-out infinite alternate; }
 .aurora-2 { width: 48vw; height: 48vw; right: -10vw; top: 12vh;
   background: radial-gradient(circle, #C2410C 0%, transparent 60%); animation: drift2 17s ease-in-out infinite alternate; }
 .aurora-3 { width: 60vw; height: 42vw; left: 22vw; bottom: -18vh;
@@ -187,17 +187,14 @@ html[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { fi
 }
 .hero-badge svg { width: 15px; height: 15px; color: var(--brand-orange-hi); }
 
-.hero-title { margin: 26px 0 0; line-height: 1.02; }
-.hero-title-en {
-  display: block; font-size: clamp(52px, 9vw, 108px); font-weight: 800; letter-spacing: -0.03em;
-  background: linear-gradient(100deg, #F8FAFC 15%, #FDBA74 48%, #67E8F9 85%);
-  -webkit-background-clip: text; background-clip: text; color: transparent;
+.hero-title { margin: 22px 0 0; line-height: 0; }
+.hero-logo {
+  width: clamp(270px, 36vw, 440px); height: auto;
+  filter: drop-shadow(0 16px 44px rgba(0, 0, 0, .55));
 }
-.hero-title-zh {
-  display: block; margin-top: 10px;
-  font-family: var(--font-display-zh);
-  font-size: clamp(30px, 4.6vw, 54px); font-weight: 900; letter-spacing: .3em; padding-left: .3em;
-  color: #E2E8F0;
+.sr-only {
+  position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0;
+  overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0;
 }
 .hero-tagline { margin: 22px auto 0; max-width: 30em; color: #93A3BB; font-size: clamp(15px, 1.8vw, 18px); line-height: 1.75; }
 
@@ -240,13 +237,14 @@ html[data-theme="dark"] .maplibregl-ctrl-group button .maplibregl-ctrl-icon { fi
 
 .topbar-brand { display: flex; align-items: center; gap: 11px; cursor: pointer; flex-shrink: 0; user-select: none; }
 .brand-mark {
-  width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center;
-  background: linear-gradient(135deg, var(--brand-orange-hi), var(--brand-orange) 60%, #B45309);
-  color: #FFF7ED; box-shadow: 0 6px 18px -4px rgba(234, 88, 12, .5);
+  width: 40px; height: 40px; border-radius: 12px; display: grid; place-items: center;
+  background: #FFFDF8;
+  border: 1px solid var(--glass-border);
+  box-shadow: 0 5px 16px -4px rgba(0, 0, 0, .4);
   transition: transform var(--t-fast) var(--ease-spring);
 }
 .topbar-brand:hover .brand-mark { transform: rotate(-8deg) scale(1.06); }
-.brand-mark svg { width: 21px; height: 21px; }
+.brand-mark img { width: 30px; height: auto; display: block; }
 .brand-text { display: flex; flex-direction: column; line-height: 1.16; }
 .brand-en { font-weight: 800; font-size: 16.5px; letter-spacing: -.01em; }
 .brand-zh { font-size: 11.5px; color: var(--text-3); letter-spacing: .14em; }
