@@ -696,6 +696,122 @@ html[data-theme="light"] .d-status { color: #B91C1C; background: color-mix(in sr
 }
 
 /* ============================================================
+   JOIN US
+   ============================================================ */
+.join-btn {
+  height: 42px; padding: 0 16px; border-radius: 13px;
+  display: inline-flex; align-items: center; gap: 8px;
+  font-weight: 700; font-size: 13.5px; white-space: nowrap;
+  color: var(--on-primary);
+  background: linear-gradient(115deg, var(--brand-orange-hi), var(--primary-strong));
+  box-shadow: 0 6px 18px -6px var(--ring);
+  transition: transform var(--t-fast) var(--ease-spring), box-shadow var(--t-med);
+}
+.join-btn:hover { transform: translateY(-1px); box-shadow: 0 10px 24px -6px var(--ring); }
+.join-btn:active { transform: scale(.94); }
+.join-btn svg { width: 17px; height: 17px; }
+
+.join-modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; }
+.join-modal[hidden] { display: none; }
+.join-scrim { position: absolute; inset: 0; background: var(--scrim); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.join-card {
+  position: relative; width: min(360px, calc(100vw - 40px));
+  padding: 30px 28px 24px; border-radius: var(--radius-lg);
+  text-align: center;
+  animation: pop var(--t-med) var(--ease-spring);
+}
+.join-close { position: absolute; top: 10px; right: 10px; }
+.join-logo { width: 54px; height: auto; margin: 0 auto 10px; display: block; }
+.join-card h2 { margin: 0 0 8px; font-size: 20px; font-weight: 800; }
+.join-desc { margin: 0 0 16px; font-size: 13.5px; line-height: 1.7; color: var(--text-2); }
+.join-qr {
+  width: 220px; height: 220px; margin: 0 auto 14px;
+  border-radius: var(--radius-md); overflow: hidden;
+  background: #fff; border: 1px solid var(--glass-border);
+  display: grid; place-items: center;
+}
+.join-qr img { width: 100%; height: 100%; object-fit: contain; display: block; }
+.join-qr .join-qr-soon { display: none; }
+.join-qr.noimg img { display: none; }
+.join-qr.noimg { background: var(--surface-2); }
+.join-qr.noimg .join-qr-soon { display: block; padding: 18px; font-size: 12.5px; color: var(--text-3); line-height: 1.7; }
+.join-wechat {
+  font-size: 15px; font-weight: 800; color: var(--primary);
+  user-select: all;
+}
+.join-note { margin-top: 6px; font-size: 12px; color: var(--text-3); letter-spacing: .04em; }
+body.modal-open { overflow: hidden; }
+
+/* ============================================================
+   MARKS (want / done)
+   ============================================================ */
+.drawer-marks {
+  display: flex; align-items: center; gap: 10px;
+  padding: 0 14px 10px 16px;
+}
+.mark-tabs {
+  display: flex; gap: 4px; padding: 3px; border-radius: 999px;
+  background: var(--surface-2); border: 1px solid var(--glass-border);
+}
+.mtab {
+  padding: 5px 12px; border-radius: 999px;
+  font-size: 12px; font-weight: 600; color: var(--text-2);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.mtab:hover { color: var(--text); }
+.mtab.on { background: var(--primary); color: var(--on-primary); }
+.mark-progress { margin-left: auto; font-size: 11.5px; font-weight: 700; color: var(--text-3); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+.m-mark { display: inline-grid; place-items: center; margin-left: 6px; vertical-align: -2px; }
+.m-mark svg { width: 12px; height: 12px; }
+.m-mark.want { color: #FACC15; }
+.m-mark.done { color: #34D399; }
+
+.d-marks { display: flex; gap: 9px; margin-top: 24px; }
+.d-mark {
+  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+  height: 42px; border-radius: var(--radius-md);
+  font-weight: 700; font-size: 13.5px; color: var(--text-2);
+  background: var(--surface-2); border: 1.5px solid var(--glass-border);
+  transition: all var(--t-fast);
+}
+.d-mark svg { width: 16px; height: 16px; }
+.d-mark:active { transform: scale(.96); }
+.d-mark.want:hover { border-color: #FACC15; color: var(--text); }
+.d-mark.done:hover { border-color: #34D399; color: var(--text); }
+.d-mark.want.on { background: color-mix(in srgb, #FACC15 16%, transparent); border-color: #FACC15; color: #FACC15; }
+.d-mark.done.on { background: color-mix(in srgb, #34D399 15%, transparent); border-color: #34D399; color: #34D399; }
+
+/* ============================================================
+   SORT + PROFILE HOVER
+   ============================================================ */
+.sort-btn {
+  display: inline-flex; align-items: center; gap: 6px;
+  height: 30px; padding: 0 11px; border-radius: 999px;
+  font-size: 11.5px; font-weight: 700; color: var(--text-2);
+  background: var(--surface-2); border: 1px solid var(--glass-border);
+  transition: color var(--t-fast), border-color var(--t-fast);
+}
+.sort-btn:hover { color: var(--text); border-color: var(--text-3); }
+.sort-btn svg { width: 13px; height: 13px; }
+
+.pf-wrap { position: relative; }
+.pf-svg .pf-cursor { stroke: var(--text-3); stroke-width: 1; stroke-dasharray: 2 3; }
+.pf-svg .pf-cursor-dot { fill: #fff; stroke: #FB923C; stroke-width: 2; }
+.pf-tip {
+  position: absolute; top: -6px; transform: translateX(-50%);
+  padding: 3px 9px; border-radius: 7px; white-space: nowrap;
+  font-size: 11px; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums;
+  background: var(--surface-solid); border: 1px solid var(--glass-border);
+  box-shadow: var(--shadow-sm); pointer-events: none;
+}
+
+@media (max-width: 860px) {
+  .join-btn span { display: none; }
+  .join-btn { width: 42px; padding: 0; justify-content: center; border-radius: 13px; }
+}
+
+/* ============================================================
    REDUCED MOTION
    ============================================================ */
 @media (prefers-reduced-motion: reduce) {

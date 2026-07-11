@@ -31,8 +31,21 @@ let trailToken = 0;
 const wxCache = {};
 let orbiting = false;
 let orbitPrevTs = 0;
-const filters = { q: "", region: "all", diff: "all" };
+const filters = { q: "", region: "all", diff: "all", mark: "all" };
 const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+/* ---------- personal marks (want / done), stored locally ---------- */
+let marks = {};
+try { marks = JSON.parse(localStorage.getItem("wg-marks") || "{}"); } catch (e) { marks = {}; }
+function setMark(id, val) {
+  if (marks[id] === val) delete marks[id];      // toggle off
+  else if (val) marks[id] = val;
+  else delete marks[id];
+  localStorage.setItem("wg-marks", JSON.stringify(marks));
+  applyFilters();
+}
+
+let sortMode = "elevation";    // elevation | difficulty | name
 
 /* ---------- helpers ---------- */
 const $ = (sel) => document.querySelector(sel);
@@ -323,6 +336,7 @@ function visibleMountains() {
   return mountains.filter((m) => {
     if (filters.region !== "all" && m.region_key !== filters.region) return false;
     if (filters.diff !== "all" && diffBucket(m.difficulty) !== filters.diff) return false;
+    if (filters.mark !== "all" && marks[m.id] !== filters.mark) return false;
     if (q) {
       const hay = `${m.name.zh || ""} ${m.name.en || ""} ${loc(m.province)}`.toLowerCase();
       if (!hay.includes(q)) return false;
@@ -344,22 +358,43 @@ function applyFilters() {
 /* ============================================================
    LIST DRAWER
    ============================================================ */
+const MARK_ICONS = {
+  want: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="m12 2.8 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.6l-5.8 3.1 1.1-6.5L2.6 9.6l6.5-.9L12 2.8Z"/></svg>',
+  done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5.5 5.5L20 6.5"/></svg>',
+};
+const SORT_MODES = ["elevation", "difficulty", "name"];
+function sortList(vis) {
+  const arr = [...vis];
+  if (sortMode === "difficulty") arr.sort((a, b) => b.difficulty - a.difficulty || b.elevation_m - a.elevation_m);
+  else if (sortMode === "name") arr.sort((a, b) => loc(a.name).localeCompare(loc(b.name), LANG === "zh" ? "zh-Hans-CN" : "en"));
+  else arr.sort((a, b) => b.elevation_m - a.elevation_m);
+  return arr;
+}
+
 let listAnimated = false;
 function renderList(vis) {
   const body = $("#list-body");
   $("#list-count").textContent = vis.length;
+  // marks progress + tab states
+  const doneCount = mountains.filter((m) => marks[m.id] === "done").length;
+  const prog = $("#mark-progress");
+  if (prog) prog.textContent = `${t("mark.progress")} ${doneCount}/${mountains.length}`;
+  document.querySelectorAll("#mark-tabs .mtab").forEach((b) => b.classList.toggle("on", b.dataset.mark === filters.mark));
+  const sb = $("#btn-sort");
+  if (sb) sb.querySelector("span").textContent = t("sort." + sortMode);
+
   if (!vis.length) {
     body.innerHTML = `<div class="list-empty">${esc(t("list.empty")).replace(/\n/g, "<br>")}</div>`;
     return;
   }
   const animCls = listAnimated ? "no-anim" : "";
   listAnimated = true;
-  const sorted = [...vis].sort((a, b) => b.elevation_m - a.elevation_m);
+  const sorted = sortList(vis);
   body.innerHTML = sorted.map((m, i) => `
     <button class="m-card ${m.id === activeId ? "active" : ""} ${animCls}" data-id="${esc(m.id)}" style="--i:${Math.min(i, 20)}">
       <div class="m-card-bar" style="background:${diffColor(m.difficulty)}"></div>
       <div class="m-card-main">
-        <div class="m-card-name">${esc(loc(m.name))}</div>
+        <div class="m-card-name">${esc(loc(m.name))}${marks[m.id] ? `<span class="m-mark ${marks[m.id]}">${MARK_ICONS[marks[m.id]]}</span>` : ""}</div>
         <div class="m-card-sub">${esc(t("region." + m.region_key))} · ${esc(loc(m.province))}</div>
       </div>
       <div class="m-card-right">
@@ -474,6 +509,15 @@ function renderDetail(m) {
     ${m.tips ? `<div class="d-section"><h3>${esc(t("d.tips"))}</h3><p>${esc(loc(m.tips))}</p></div>` : ""}
     ${sources ? `<div class="d-section"><h3>${esc(t("d.sources"))}</h3><div class="d-links">${sources}</div></div>` : ""}
 
+    <div class="d-marks">
+      <button class="d-mark want ${marks[m.id] === "want" ? "on" : ""}" data-mark="want" title="${esc(t("mark.deviceNote"))}">
+        ${MARK_ICONS.want}<span>${esc(t("mark.want"))}</span>
+      </button>
+      <button class="d-mark done ${marks[m.id] === "done" ? "on" : ""}" data-mark="done" title="${esc(t("mark.deviceNote"))}">
+        ${MARK_ICONS.done}<span>${esc(t("mark.done"))}</span>
+      </button>
+    </div>
+
     <div class="d-actions">
       <a class="d-btn d-btn-primary" href="${esc(gmaps)}" target="_blank" rel="noopener">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
@@ -489,6 +533,15 @@ function renderDetail(m) {
   `;
   const refly = $("#btn-refly");
   if (refly) refly.addEventListener("click", () => flyToMountain(m));
+
+  // want / done toggles
+  document.querySelectorAll("#detail-body .d-mark").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      setMark(m.id, btn.dataset.mark);
+      document.querySelectorAll("#detail-body .d-mark").forEach((b) =>
+        b.classList.toggle("on", marks[m.id] === b.dataset.mark));
+    });
+  });
 
   // photo carousel navigation
   const strip = $("#d-photos");
@@ -586,11 +639,11 @@ async function loadWeather(m) {
 /* ============================================================
    TRAILS (OSM route + elevation profile)
    ============================================================ */
-const TRAIL_LAYERS = ["trail-net", "trail-route-glow", "trail-route"];
+const TRAIL_LAYERS = ["trail-net", "trail-route-glow", "trail-route", "trail-pos"];
 
 function clearTrailLayers() {
   TRAIL_LAYERS.forEach((l) => { if (map.getLayer(l)) map.removeLayer(l); });
-  ["trail-net", "trail-route"].forEach((s) => { if (map.getSource(s)) map.removeSource(s); });
+  ["trail-net", "trail-route", "trail-pos"].forEach((s) => { if (map.getSource(s)) map.removeSource(s); });
 }
 
 function addTrailLayers(tr) {
@@ -619,6 +672,12 @@ function addTrailLayers(tr) {
     layout: { "line-cap": "round", "line-join": "round" },
     paint: { "line-color": "#FB923C", "line-width": 2.6 },
   }, before);
+  // hover position dot (driven by the elevation profile)
+  map.addSource("trail-pos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  map.addLayer({
+    id: "trail-pos", type: "circle", source: "trail-pos",
+    paint: { "circle-radius": 6, "circle-color": "#FFFFFF", "circle-stroke-width": 3, "circle-stroke-color": "#FB923C" },
+  }, before);
 }
 
 function profileSVG(tr) {
@@ -645,7 +704,47 @@ function profileSVG(tr) {
     <text x="${L - 5}" y="${H - B + 4}" class="pf-lb" text-anchor="end">${min}</text>
     <text x="${L}" y="${H - 5}" class="pf-lb">0</text>
     <text x="${W - R}" y="${H - 5}" class="pf-lb" text-anchor="end">${tr.dist_km} km</text>
+    <line class="pf-cursor" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>
+    <circle class="pf-cursor-dot" r="3.5" visibility="hidden"/>
   </svg>`;
+}
+
+/* interactive hover on the elevation profile: cursor line + tip + map position dot */
+function attachProfileHover(wrap, tr) {
+  const svg = wrap.querySelector(".pf-svg");
+  const tip = wrap.querySelector(".pf-tip");
+  if (!svg || !tip) return;
+  const cursor = svg.querySelector(".pf-cursor");
+  const dot = svg.querySelector(".pf-cursor-dot");
+  const W = 340, H = 118, L = 36, R = 8, T = 12, B = 20;
+  const ele = tr.ele, n = ele.length;
+  const min = Math.min(...ele), span = Math.max(Math.max(...ele) - min, 10);
+  const move = (clientX) => {
+    const rect = svg.getBoundingClientRect();
+    const xu = (clientX - rect.left) / rect.width * W;
+    const frac = Math.min(1, Math.max(0, (xu - L) / (W - L - R)));
+    const i = Math.round(frac * (n - 1));
+    const x = L + (W - L - R) * i / (n - 1);
+    const yy = T + (H - T - B) * (1 - (ele[i] - min) / span);
+    cursor.setAttribute("x1", x); cursor.setAttribute("x2", x); cursor.removeAttribute("visibility");
+    dot.setAttribute("cx", x); dot.setAttribute("cy", yy); dot.removeAttribute("visibility");
+    tip.hidden = false;
+    tip.textContent = `${(frac * tr.dist_km).toFixed(1)} km · ${ele[i]} m`;
+    tip.style.left = `${(x / W) * 100}%`;
+    const src = map.getSource("trail-pos");
+    if (src && tr.route[i]) src.setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: tr.route[i] } });
+  };
+  const leave = () => {
+    cursor.setAttribute("visibility", "hidden");
+    dot.setAttribute("visibility", "hidden");
+    tip.hidden = true;
+    const src = map.getSource("trail-pos");
+    if (src) src.setData({ type: "FeatureCollection", features: [] });
+  };
+  svg.addEventListener("mousemove", (e) => move(e.clientX));
+  svg.addEventListener("mouseleave", leave);
+  svg.addEventListener("touchmove", (e) => move(e.touches[0].clientX), { passive: true });
+  svg.addEventListener("touchend", leave);
 }
 
 async function showTrail(m) {
@@ -671,8 +770,9 @@ async function showTrail(m) {
         <span><b>${tr.dist_km}</b> km · ${esc(t("d.trailOneWay"))}</span>
         <span><b>+${tr.ascent_m.toLocaleString()}</b> m · ${esc(t("d.trailAscent"))}</span>
       </div>
-      ${profileSVG(tr)}
+      <div class="pf-wrap">${profileSVG(tr)}<div class="pf-tip" hidden></div></div>
       <p class="pf-note">${esc(t("d.trailNote"))}</p>`;
+    attachProfileHover(sec.querySelector(".pf-wrap"), tr);
   }
 }
 
@@ -836,8 +936,43 @@ function bindUI() {
 
   bindSearch();
 
+  // join-us modal
+  const joinModal = $("#join-modal");
+  const setJoin = (open) => { joinModal.hidden = !open; document.body.classList.toggle("modal-open", open); };
+  $("#btn-join").addEventListener("click", () => setJoin(true));
+  joinModal.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) setJoin(false); });
+
+  // mark tabs (all / want / done)
+  $("#mark-tabs").addEventListener("click", (e) => {
+    const b = e.target.closest(".mtab");
+    if (!b) return;
+    filters.mark = b.dataset.mark;
+    applyFilters();
+  });
+
+  // sort mode cycle
+  $("#btn-sort").addEventListener("click", () => {
+    sortMode = SORT_MODES[(SORT_MODES.indexOf(sortMode) + 1) % SORT_MODES.length];
+    renderList(visibleMountains());
+  });
+
+  // swipe-down to close bottom sheets (mobile)
+  const addSwipeClose = (zone, canStart, onClose) => {
+    let y0 = null;
+    zone.addEventListener("touchstart", (e) => { y0 = canStart() ? e.touches[0].clientY : null; }, { passive: true });
+    zone.addEventListener("touchmove", (e) => {
+      if (y0 !== null && e.touches[0].clientY - y0 > 64) { y0 = null; onClose(); }
+    }, { passive: true });
+    zone.addEventListener("touchend", () => { y0 = null; }, { passive: true });
+  };
+  const isMobile = () => window.matchMedia("(max-width: 860px)").matches;
+  addSwipeClose(document.querySelector("#list-drawer .drawer-head"), isMobile, () => setDrawer(false));
+  const detailScroll = document.querySelector("#detail .detail-scroll");
+  addSwipeClose(detailScroll, () => isMobile() && detailScroll.scrollTop <= 0, closeDetail);
+
   document.addEventListener("keydown", (e) => {
     if (e.key === "Escape") {
+      if (!joinModal.hidden) { setJoin(false); return; }
       if (!$("#search-results").hidden) return; // search handles its own esc
       if ($("#detail").classList.contains("open")) closeDetail();
     }
@@ -934,3 +1069,12 @@ function fillHeroStats() {
     }
   }
 })();
+
+/* ============================================================
+   PWA — offline tile/asset caching (https only)
+   ============================================================ */
+if ("serviceWorker" in navigator && location.protocol === "https:") {
+  window.addEventListener("load", () => {
+    navigator.serviceWorker.register("./sw.js").catch(() => {});
+  });
+}

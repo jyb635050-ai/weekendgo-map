@@ -1,0 +1,15 @@
+{
+  "name": "WeekendGo 那我走 — 菲律宾徒步地图",
+  "short_name": "那我走",
+  "description": "Philippines hiking 3D map — 61 mountains, trails, weather.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "any",
+  "background_color": "#0A0F1C",
+  "theme_color": "#0A0F1C",
+  "icons": [
+    { "src": "assets/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "assets/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

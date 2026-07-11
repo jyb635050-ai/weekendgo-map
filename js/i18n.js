@@ -86,6 +86,24 @@ const I18N = {
     "d.trailOneWay": "单程",
     "d.trailAscent": "累计爬升",
     "d.trailNote": "轨迹来自 OpenStreetMap 社区数据，仅供参考；请以实地路标与向导为准。",
+
+    "join.btn": "加入我们",
+    "join.title": "加入我们的徒步活动",
+    "join.desc": "微信扫码添加领队 Eddy，备注「徒步」，拉你进活动群。",
+    "join.wechat": "微信：Weekend Go_ Eddy",
+    "join.note": "那我走 · 每周末出发 🇵🇭",
+    "join.qrSoon": "二维码整理中——先按上方微信号搜索添加",
+
+    "mark.want": "想去",
+    "mark.done": "已登顶",
+    "mark.all": "全部",
+    "mark.deviceNote": "记录仅保存在本机浏览器",
+    "mark.progress": "已登顶",
+
+    "sort.elevation": "海拔",
+    "sort.difficulty": "难度",
+    "sort.name": "名称",
+    "sort.label": "排序",
   },
 
   en: {
@@ -170,6 +188,24 @@ const I18N = {
     "d.trailOneWay": "one-way",
     "d.trailAscent": "ascent",
     "d.trailNote": "Trail from OpenStreetMap community data — for reference only; follow signage and local guides.",
+
+    "join.btn": "Join us",
+    "join.title": "Join our weekend hikes",
+    "join.desc": "Scan the QR on WeChat to add our lead Eddy — mention \"hiking\" and he'll add you to the group.",
+    "join.wechat": "WeChat: Weekend Go_ Eddy",
+    "join.note": "WeekendGo · every weekend 🇵🇭",
+    "join.qrSoon": "QR coming soon — search the WeChat ID above to add",
+
+    "mark.want": "Want to go",
+    "mark.done": "Climbed",
+    "mark.all": "All",
+    "mark.deviceNote": "Saved in this browser only",
+    "mark.progress": "Climbed",
+
+    "sort.elevation": "Elevation",
+    "sort.difficulty": "Difficulty",
+    "sort.name": "Name",
+    "sort.label": "Sort",
   },
 };
 

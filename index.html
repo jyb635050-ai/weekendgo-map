@@ -11,9 +11,15 @@
   <meta property="og:url" content="https://jyb635050-ai.github.io/weekendgo-map/">
   <meta property="og:type" content="website">
   <link rel="icon" type="image/png" href="assets/favicon.png">
+  <link rel="apple-touch-icon" href="assets/icon-192.png">
+  <link rel="manifest" href="manifest.webmanifest">
+  <meta name="theme-color" content="#0A0F1C">
   <link rel="preload" as="image" href="assets/logo-full.webp">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="preconnect" href="https://server.arcgisonline.com">
+  <link rel="preconnect" href="https://s3.amazonaws.com">
+  <link rel="preconnect" href="https://glyphs.geolonia.com">
   <link href="https://fonts.googleapis.com/css2?family=DM+Sans:opsz,wght@9..40,400;9..40,500;9..40,600;9..40,700;9..40,800&family=Noto+Sans+SC:wght@400;500;700;900&family=Noto+Serif+SC:wght@700;900&display=swap" rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/maplibre-gl@5.6.0/dist/maplibre-gl.min.css" rel="stylesheet">
   <link href="css/main.css" rel="stylesheet">
@@ -89,6 +95,10 @@
     </div>
 
     <div class="topbar-actions">
+      <button id="btn-join" class="join-btn">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M19 8v6M22 11h-6"/></svg>
+        <span data-i18n="join.btn">加入我们</span>
+      </button>
       <button id="btn-list" class="icon-btn" aria-label="Mountain list" title="山峰列表">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 6h13M8 12h13M8 18h13M3 6h.01M3 12h.01M3 18h.01"/></svg>
       </button>
@@ -105,9 +115,21 @@
     <div class="drawer-head">
       <h2 data-i18n="list.title">山峰列表</h2>
       <span id="list-count" class="list-count">0</span>
+      <button id="btn-sort" class="sort-btn" title="排序">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 5h10M11 9h7M11 13h4M3 17l3 3 3-3M6 6v14"/></svg>
+        <span>海拔</span>
+      </button>
       <button class="icon-btn drawer-close" id="btn-list-close" aria-label="Close list">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
       </button>
+    </div>
+    <div class="drawer-marks">
+      <div id="mark-tabs" class="mark-tabs">
+        <button class="mtab on" data-mark="all" data-i18n="mark.all">全部</button>
+        <button class="mtab" data-mark="want" data-i18n="mark.want">想去</button>
+        <button class="mtab" data-mark="done" data-i18n="mark.done">已登顶</button>
+      </div>
+      <span id="mark-progress" class="mark-progress"></span>
     </div>
     <div id="drawer-filters" class="drawer-filters"></div>
     <div class="drawer-body" id="list-body"></div>
@@ -141,6 +163,26 @@
     <span class="legend-item"><i style="background:#F97316"></i><span data-i18n="legend.mid">进阶 4–6</span></span>
     <span class="legend-item"><i style="background:#EF4444"></i><span data-i18n="legend.hard">挑战 7–8</span></span>
     <span class="legend-item"><i style="background:#A855F7"></i><span data-i18n="legend.extreme">极限 9</span></span>
+  </div>
+
+  <!-- ==================== JOIN US MODAL ==================== -->
+  <div id="join-modal" class="join-modal" hidden>
+    <div class="join-scrim" data-close></div>
+    <div class="join-card glass" role="dialog" aria-modal="true" aria-labelledby="join-title">
+      <button class="icon-btn join-close" data-close aria-label="Close">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+      <img class="join-logo" src="assets/logo-mark.webp" alt="WeekendGo">
+      <h2 id="join-title" data-i18n="join.title">加入我们的徒步活动</h2>
+      <p class="join-desc" data-i18n="join.desc">微信扫码添加领队 Eddy，备注「徒步」，拉你进活动群。</p>
+      <div class="join-qr" id="join-qr">
+        <img src="assets/wechat-qr.webp" alt="WeChat QR"
+             onerror="this.closest('.join-qr').classList.add('noimg')">
+        <div class="join-qr-soon" data-i18n="join.qrSoon">二维码整理中——先按上方微信号搜索添加</div>
+      </div>
+      <div class="join-wechat" data-i18n="join.wechat">微信：Weekend Go_ Eddy</div>
+      <div class="join-note" data-i18n="join.note">那我走 · 每周末出发 🇵🇭</div>
+    </div>
   </div>
 
   <!-- ==================== TOAST ==================== -->
