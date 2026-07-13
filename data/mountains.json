@@ -4500,6 +4500,400 @@
           "lic": "CC BY-SA 4.0"
         }
       ]
+    },
+    {
+      "id": "mantalingajan",
+      "name": {
+        "en": "Mt. Mantalingajan",
+        "zh": "曼塔林加汉山"
+      },
+      "coords": [
+        117.67519,
+        8.81822
+      ],
+      "elevation_m": 2086,
+      "region_key": "islands",
+      "province": {
+        "en": "Rizal, Palawan",
+        "zh": "巴拉望省黎萨"
+      },
+      "difficulty": 9,
+      "trail_class": "1-4",
+      "type": "major",
+      "time_to_summit": {
+        "en": "15–20 h",
+        "zh": "15–20 小时"
+      },
+      "duration": {
+        "en": "3–5 days",
+        "zh": "3–5 天"
+      },
+      "jumpoff": {
+        "en": "Brgy. Ransang, Rizal (exit Brooke's Point)",
+        "zh": "Ransang 村（黎萨），出口 Brooke's Point"
+      },
+      "summary": {
+        "en": "Palawan's highest peak and the 'Mountain of God' — one of the three 9/9 climbs (with Halcon and G2) that cap the Philippine difficulty scale. A week-long expedition ends with a summit bouldering scramble above the Sulu Sea and the South China Sea.",
+        "zh": "巴拉望最高峰、当地人称『神之山』——与哈尔孔、G2 并列的三座 9/9 顶级难度之一。历时近一周的远征，以峰顶乱石攀爬收尾，苏禄海与南海尽收眼底。"
+      },
+      "highlights": [
+        {
+          "en": "Palawan highpoint",
+          "zh": "巴拉望之巅"
+        },
+        {
+          "en": "Two-sea summit view",
+          "zh": "双海峰顶"
+        },
+        {
+          "en": "9/9 expedition",
+          "zh": "9/9 远征"
+        }
+      ],
+      "tips": {
+        "en": "A true expedition — 5–6 days on the mountain, a full week with travel. Experienced teams only; permits and Palaw'an guides arranged via Rizal. Leeches and river crossings throughout.",
+        "zh": "名副其实的远征——山上 5–6 天，含交通近一周。仅限老手；许可与 Palaw'an 部族向导经黎萨镇安排。全程蚂蟥与渡河不断。"
+      },
+      "best_season": {
+        "en": "Mar – May",
+        "zh": "3月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "https://www.pinoymountaineer.com/2008/03/mt-mantalingajan-2086.html"
+      ],
+      "photos": [
+        {
+          "u": "https://upload.wikimedia.org/wikipedia/commons/8/82/Mount_mantalingahan_palawan.jpg",
+          "p": "https://commons.wikimedia.org/wiki/File:Mount_mantalingahan_palawan.jpg",
+          "by": "Original uploader was Alastair Robinson at en.wikipedia",
+          "lic": "Public domain"
+        }
+      ]
+    },
+    {
+      "id": "victoria-palawan",
+      "name": {
+        "en": "Mt. Victoria",
+        "zh": "维多利亚山"
+      },
+      "coords": [
+        118.30462,
+        9.37165
+      ],
+      "elevation_m": 1708,
+      "region_key": "islands",
+      "province": {
+        "en": "Narra, Palawan",
+        "zh": "巴拉望省纳拉"
+      },
+      "difficulty": 7,
+      "trail_class": "1-4",
+      "type": "major",
+      "time_to_summit": {
+        "en": "9–11 h",
+        "zh": "9–11 小时"
+      },
+      "duration": {
+        "en": "2–3 days",
+        "zh": "2–3 天"
+      },
+      "jumpoff": {
+        "en": "Sitio Mariwara, Brgy. Princess Urduja, Narra",
+        "zh": "Mariwara（纳拉 Princess Urduja 村）"
+      },
+      "summary": {
+        "en": "Palawan's second-highest and a 'Last Frontier' of Philippine mountaineering: fifteen river crossings and mossy forest lead to a summit ridge studded with the giant carnivorous pitcher plant Nepenthes attenboroughii, begonias and wild orchids.",
+        "zh": "巴拉望第二高峰、菲律宾登山的『最后疆界』之一：十五次渡河与苔藓森林之后，峰脊上生长着巨型食虫植物——阿滕伯勒猪笼草（Nepenthes attenboroughii），伴以秋海棠与野兰。"
+      },
+      "highlights": [
+        {
+          "en": "Giant pitcher plants",
+          "zh": "巨型猪笼草"
+        },
+        {
+          "en": "15 river crossings",
+          "zh": "15 次渡河"
+        },
+        {
+          "en": "Palawan's 2nd highest",
+          "zh": "巴拉望第二高"
+        }
+      ],
+      "tips": {
+        "en": "Do it over 3 days — afternoon rains swell the rivers and make crossings dangerous. Trailhead is ~2.5 h south of Puerto Princesa. Guides and permits via Narra tourism.",
+        "zh": "建议 3 天——午后阵雨会让河水暴涨、渡河危险。登山口在公主港以南约 2.5 小时车程。向导与许可经纳拉旅游办安排。"
+      },
+      "best_season": {
+        "en": "Mar – May",
+        "zh": "3月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "http://www.pinoymountaineer.com/2009/09/mount-victoria-2010.html"
+      ]
+    },
+    {
+      "id": "cleopatras-needle",
+      "name": {
+        "en": "Cleopatra's Needle",
+        "zh": "克利奥帕特拉针峰"
+      },
+      "coords": [
+        118.99523,
+        10.12402
+      ],
+      "elevation_m": 1593,
+      "region_key": "islands",
+      "province": {
+        "en": "Puerto Princesa, Palawan",
+        "zh": "巴拉望省公主港"
+      },
+      "difficulty": 7,
+      "trail_class": "1-4",
+      "type": "major",
+      "time_to_summit": {
+        "en": "10–12 h",
+        "zh": "10–12 小时"
+      },
+      "duration": {
+        "en": "3–4 days",
+        "zh": "3–4 天"
+      },
+      "jumpoff": {
+        "en": "Sitio Tagnaya, Brgy. Concepcion, Puerto Princesa",
+        "zh": "Tagnaya（公主港 Concepcion 村）"
+      },
+      "summary": {
+        "en": "A biodiversity treasure above Puerto Princesa, home of the Batak people and countless endemic species. Endless river crossings and boulder-hopping through primeval forest lead to a needle-like summit — a serious climb rewarding real explorers.",
+        "zh": "公主港上方的生物多样性宝库，Batak 部族的家园，特有物种无数。穿越原始林的无尽渡河与巨石跳跃，通往针尖般的峰顶——一座回报真正探索者的硬核山峰。"
+      },
+      "highlights": [
+        {
+          "en": "Rich biodiversity",
+          "zh": "极高生物多样性"
+        },
+        {
+          "en": "River crossings",
+          "zh": "渡河连连"
+        },
+        {
+          "en": "Batak tribal land",
+          "zh": "Batak 部族地"
+        }
+      ],
+      "tips": {
+        "en": "Solo climbs are not allowed — book a certified Batak guide via the Batak Tribal Center at Concepcion. Choose the 3-day backtrail or 4-day traverse. Expect to be wet the whole time.",
+        "zh": "禁止独攀——须经 Concepcion 的 Batak 部族中心预约持证向导。可选 3 天原路或 4 天纵走。全程湿身在所难免。"
+      },
+      "best_season": {
+        "en": "Mar – May",
+        "zh": "3月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "http://www.pinoymountaineer.com/2008/05/cleopatras-needle-1593.html"
+      ]
+    },
+    {
+      "id": "taraw-peak",
+      "name": {
+        "en": "Taraw Cliff (Peak)",
+        "zh": "塔劳崖"
+      },
+      "coords": [
+        119.38865,
+        11.17764
+      ],
+      "elevation_m": 230,
+      "region_key": "islands",
+      "province": {
+        "en": "El Nido, Palawan",
+        "zh": "巴拉望省爱妮岛"
+      },
+      "difficulty": 4,
+      "trail_class": "3-4",
+      "type": "minor",
+      "time_to_summit": {
+        "en": "0.5–1 h",
+        "zh": "0.5–1 小时"
+      },
+      "duration": {
+        "en": "Half-day (sunrise)",
+        "zh": "半日（日出）"
+      },
+      "jumpoff": {
+        "en": "El Nido town proper",
+        "zh": "爱妮岛镇区"
+      },
+      "summary": {
+        "en": "The jagged limestone spire towering over El Nido town, with the definitive panorama of Bacuit Bay and its karst islands. Short but sharp — either the raw rock scramble up razor limestone, or the safer 'Canopy Walk' via ferrata with cables, ladders and rope bridges.",
+        "zh": "高踞爱妮岛镇上方的锯齿状石灰岩尖峰，坐拥 Bacuit 湾喀斯特群岛的经典全景。短而利——可选裸攀刀刃般的石灰岩，或走更安全的『树冠步道』铁道攀岩（钢缆、梯子、绳桥）。"
+      },
+      "highlights": [
+        {
+          "en": "Bacuit Bay panorama",
+          "zh": "Bacuit 湾全景"
+        },
+        {
+          "en": "Via ferrata canopy walk",
+          "zh": "铁道树冠步道"
+        },
+        {
+          "en": "Karst limestone",
+          "zh": "喀斯特石灰岩"
+        }
+      ],
+      "tips": {
+        "en": "The rock is genuinely sharp — gloves and grippy shoes for the direct climb; go for sunrise before the heat. Prefer the guided Canopy Walk if unsure of exposure. Guides required either way.",
+        "zh": "岩石真的锋利——裸攀请戴手套穿抓地鞋，赶日出避开高温。怕临空感就走有向导的树冠步道。两种走法都需向导。"
+      },
+      "best_season": {
+        "en": "Nov – May",
+        "zh": "11月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "https://www.journeyera.com/taraw-peak-cliff-el-nido/"
+      ],
+      "photos": [
+        {
+          "u": "https://upload.wikimedia.org/wikipedia/commons/thumb/0/03/Taraw_Cliff%2C_El_Nido.jpg/960px-Taraw_Cliff%2C_El_Nido.jpg",
+          "p": "https://commons.wikimedia.org/wiki/File:Taraw_Cliff,_El_Nido.jpg",
+          "by": "David Stanley from Nanaimo, Canada",
+          "lic": "CC BY 2.0"
+        }
+      ]
+    },
+    {
+      "id": "candalaga",
+      "name": {
+        "en": "Mt. Candalaga",
+        "zh": "坎达拉加山"
+      },
+      "coords": [
+        126.19614,
+        7.29546
+      ],
+      "elevation_m": 2402,
+      "region_key": "mindanao",
+      "province": {
+        "en": "Maragusan, Davao de Oro",
+        "zh": "达沃德奥罗省马拉古桑"
+      },
+      "difficulty": 8,
+      "trail_class": "1-5",
+      "type": "major",
+      "time_to_summit": {
+        "en": "12–14 h",
+        "zh": "12–14 小时"
+      },
+      "duration": {
+        "en": "3 days",
+        "zh": "3 天"
+      },
+      "jumpoff": {
+        "en": "Marangig Falls, Brgy. New Albay, Maragusan",
+        "zh": "Marangig 瀑布（马拉古桑 New Albay 村）"
+      },
+      "summary": {
+        "en": "A wild Davao-region climb where Day 1 is almost entirely river trekking and rope courses. Beyond the waterfalls lie rafflesia blooms and a summit so wrapped in moss — ground to treetop — that it holds no view, only an otherworldly green silence.",
+        "zh": "达沃区域的野性硬线，第一天几乎全是溯溪与绳降。瀑布之上是绽放的大王花，峰顶从地面到树梢裹满苔藓——没有展望，只有一片异世界般的绿色静谧。"
+      },
+      "highlights": [
+        {
+          "en": "River trekking & ropes",
+          "zh": "溯溪与绳降"
+        },
+        {
+          "en": "Rafflesia blooms",
+          "zh": "大王花"
+        },
+        {
+          "en": "Mossy summit",
+          "zh": "苔藓峰顶"
+        }
+      ],
+      "tips": {
+        "en": "Day 1 is ~90% river trekking — waterproof everything and expect to swim sections. Registered guides (from Maragusan) mandatory. Not for beginners; strong river skills needed.",
+        "zh": "第一天约 90% 溯溪——全套防水，部分河段需泅渡。须请注册向导（马拉古桑）。非新手线，需较强渡河能力。"
+      },
+      "best_season": {
+        "en": "Mar – May",
+        "zh": "3月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "https://www.pinoymountaineer.com/2008/07/mt-candalaga-2402.html"
+      ]
+    },
+    {
+      "id": "white-peak",
+      "name": {
+        "en": "White Peak (Mt. Pandadagsaan)",
+        "zh": "白峰（潘达达格桑山）"
+      },
+      "coords": [
+        126.22384,
+        7.44247
+      ],
+      "elevation_m": 2670,
+      "region_key": "mindanao",
+      "province": {
+        "en": "New Bataan, Davao de Oro",
+        "zh": "达沃德奥罗省新巴丹"
+      },
+      "difficulty": 6,
+      "trail_class": "2-5",
+      "type": "major",
+      "time_to_summit": {
+        "en": "8–10 h",
+        "zh": "8–10 小时"
+      },
+      "duration": {
+        "en": "2–3 days",
+        "zh": "2–3 天"
+      },
+      "jumpoff": {
+        "en": "Brgy. Andap, New Bataan",
+        "zh": "Andap 村（新巴丹）"
+      },
+      "summary": {
+        "en": "The Philippines' 13th-highest peak, named for the pale, almost sparkling stone of its upper face. Mossy forest gives way to rope-aided grassy slopes and twin summits — the second opening up huge vistas across Compostela Valley to Mt. Apo.",
+        "zh": "菲律宾第 13 高峰，因上段山体苍白近乎闪亮的岩面而得名。苔藓森林之上是需拉绳的草坡与双子峰——第二峰豁然开朗，越过 Compostela 谷一路望到阿波山。"
+      },
+      "highlights": [
+        {
+          "en": "13th highest in PH",
+          "zh": "全菲第 13 高"
+        },
+        {
+          "en": "White rock face",
+          "zh": "白色岩壁"
+        },
+        {
+          "en": "Views to Mt. Apo",
+          "zh": "远望阿波山"
+        }
+      ],
+      "tips": {
+        "en": "The upper grassy slopes have fixed ropes — cold and windy up top, pack layers. Coordinate guides via New Bataan. Dry season (esp. March) is the usual climbing window.",
+        "zh": "上段草坡有固定绳——顶部又冷又风大，保暖层带足。向导经新巴丹协调。旱季（尤其 3 月）为常规登山窗口。"
+      },
+      "best_season": {
+        "en": "Mar – May",
+        "zh": "3月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "https://www.pinoymountaineer.com/2008/08/white-peak-mt-pandadagsaan-2670.html"
+      ]
     }
   ]
 }
