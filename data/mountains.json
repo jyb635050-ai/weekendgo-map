@@ -4422,6 +4422,84 @@
       "sources": [
         "https://www.pinoymountaineer.com/2007/08/mt-kalisungan-760.html"
       ]
+    },
+    {
+      "id": "alicia-panoramic",
+      "name": {
+        "en": "Alicia Panoramic Park (TAPP)",
+        "zh": "阿丽西亚全景公园（TAPP）"
+      },
+      "coords": [
+        124.46276,
+        9.92869
+      ],
+      "elevation_m": 400,
+      "region_key": "visayas",
+      "province": {
+        "en": "Alicia, Bohol",
+        "zh": "保和省阿丽西亚（薄荷岛）"
+      },
+      "difficulty": 3,
+      "trail_class": "1-3",
+      "type": "minor",
+      "time_to_summit": {
+        "en": "1–2 h",
+        "zh": "1–2 小时"
+      },
+      "duration": {
+        "en": "Dayhike (camping popular)",
+        "zh": "一日往返（也常露营）"
+      },
+      "jumpoff": {
+        "en": "Registration area, Alicia (habal-habal from town center)",
+        "zh": "Alicia 镇登记处（自镇中心乘 habal-habal）"
+      },
+      "summary": {
+        "en": "The 'TAPP' — Binabaje Hills of Alicia: a short but steep push up cogon-grass ridges to a rolling emerald summit that floats above a sea of clouds at sunrise. Underneath lies the Alicia Schist, Bohol's oldest rock (~150 million years).",
+        "zh": "网红打卡地『TAPP』——阿丽西亚的 Binabaje 丘陵：短而陡的茅草坡直上翠绿的波浪状山顶，清晨常悬于云海之上。脚下正是保和岛最古老的岩层 Alicia Schist（约 1.5 亿年）。"
+      },
+      "highlights": [
+        {
+          "en": "Sea of clouds at sunrise",
+          "zh": "清晨云海"
+        },
+        {
+          "en": "Emerald cogon ridges",
+          "zh": "翠绿茅草脊"
+        },
+        {
+          "en": "Alicia Schist (oldest rock)",
+          "zh": "最古老岩层"
+        }
+      ],
+      "tips": {
+        "en": "A local eco-guide is mandatory (~₱300/day) — register in Alicia town. Sunrise groups leave around 3 AM. The cogon grass scratches: wear long sleeves. Fully exposed and dry up top — carry your own water.",
+        "zh": "强制请当地生态向导（约 300 比索/天），在 Alicia 镇登记。看日出的队伍约凌晨 3 点出发。茅草割人，穿长袖。山顶暴晒无水源，自带饮用水。"
+      },
+      "best_season": {
+        "en": "Dec – May",
+        "zh": "12月 – 5月"
+      },
+      "status": null,
+      "verified": true,
+      "sources": [
+        "https://www.nomadengr.com/post/alicia-panoramic-park",
+        "https://theboholana.blog/2023/09/10/a-guide-to-hiking-camping-at-alicia-panoramic-park-bohol/"
+      ],
+      "photos": [
+        {
+          "u": "https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Alicia_Park_Bohol.jpg/960px-Alicia_Park_Bohol.jpg",
+          "p": "https://commons.wikimedia.org/wiki/File:Alicia_Park_Bohol.jpg",
+          "by": "Nairbest10",
+          "lic": "CC BY-SA 4.0"
+        },
+        {
+          "u": "https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Alicia_hills_Bohol.jpg/960px-Alicia_hills_Bohol.jpg",
+          "p": "https://commons.wikimedia.org/wiki/File:Alicia_hills_Bohol.jpg",
+          "by": "Nairbest10",
+          "lic": "CC BY-SA 4.0"
+        }
+      ]
     }
   ]
 }
