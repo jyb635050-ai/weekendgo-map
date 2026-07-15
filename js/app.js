@@ -4,6 +4,9 @@
    ============================================================ */
 "use strict";
 
+/* clickjacking guard: refuse to run framed by another origin */
+try { if (window.top !== window.self) window.top.location = window.self.location.href; } catch (e) { document.documentElement.style.display = "none"; }
+
 /* ---------- constants ---------- */
 const HOME_VIEW = { center: [121.9, 11.8], zoom: 5.55, pitch: 42, bearing: -10 };
 const INTRO_VIEW = { center: [121.9, 11.2], zoom: 4.85, pitch: 0, bearing: 0 };
@@ -36,7 +39,15 @@ const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)
 
 /* ---------- personal marks (want / done), stored locally ---------- */
 let marks = {};
-try { marks = JSON.parse(localStorage.getItem("wg-marks") || "{}"); } catch (e) { marks = {}; }
+try {
+  const raw = JSON.parse(localStorage.getItem("wg-marks") || "{}");
+  // whitelist: only keep string ids mapped to exactly "want" or "done"
+  if (raw && typeof raw === "object") {
+    for (const [k, v] of Object.entries(raw)) {
+      if (typeof k === "string" && (v === "want" || v === "done")) marks[k] = v;
+    }
+  }
+} catch (e) { marks = {}; }
 function setMark(id, val) {
   if (marks[id] === val) delete marks[id];      // toggle off
   else if (val) marks[id] = val;
@@ -50,6 +61,14 @@ let sortMode = "elevation";    // elevation | difficulty | name
 /* ---------- helpers ---------- */
 const $ = (sel) => document.querySelector(sel);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* only allow http/https URLs into href/src (data comes from JSON — defend against poisoned javascript: links) */
+function safeUrl(u) {
+  try {
+    const url = new URL(u, location.href);
+    return (url.protocol === "http:" || url.protocol === "https:") ? url.href : "#";
+  } catch (e) { return "#"; }
+}
 
 let toastTimer = null;
 function toast(msg, ms = 3200) {
@@ -426,7 +445,7 @@ function renderDetail(m) {
   const highlights = (m.highlights || []).map((h) => `<span class="d-tag">${esc(loc(h))}</span>`).join("");
   const sources = (m.sources || []).map((s) => {
     let host = s; try { host = new URL(s).hostname.replace(/^www\./, ""); } catch (_) {}
-    return `<a class="d-link" href="${esc(s)}" target="_blank" rel="noopener">
+    return `<a class="d-link" href="${esc(safeUrl(s))}" target="_blank" rel="noopener noreferrer">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M10 14a5 5 0 0 0 7 0l3-3a5 5 0 0 0-7-7l-1.5 1.5"/><path d="M14 10a5 5 0 0 0-7 0l-3 3a5 5 0 0 0 7 7L12.5 19"/></svg>
       <span>${esc(host)}</span></a>`;
   }).join("");
@@ -442,7 +461,7 @@ function renderDetail(m) {
     ${(m.photos && m.photos.length) ? `<div class="d-photos-wrap${m.photos.length > 1 ? " multi" : ""}">
       <div class="d-photos" id="d-photos">${m.photos.map((p) => `
       <figure class="d-photo">
-        <a href="${esc(p.p)}" target="_blank" rel="noopener"><img src="${esc(p.u)}" alt="${esc(loc(m.name))}" loading="lazy" onerror="this.closest('figure').remove()"></a>
+        <a href="${esc(safeUrl(p.p))}" target="_blank" rel="noopener noreferrer"><img src="${esc(safeUrl(p.u))}" alt="${esc(loc(m.name))}" loading="lazy"></a>
         <figcaption>© ${esc(p.by)} · ${esc(p.lic)}</figcaption>
       </figure>`).join("")}</div>
       ${m.photos.length > 1 ? `
@@ -519,10 +538,14 @@ function renderDetail(m) {
     </div>
 
     <div class="d-actions">
-      <a class="d-btn d-btn-primary" href="${esc(gmaps)}" target="_blank" rel="noopener">
+      <a class="d-btn d-btn-primary" href="${esc(safeUrl(gmaps))}" target="_blank" rel="noopener noreferrer">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
         ${esc(t("d.gmaps"))}
       </a>
+      <button class="d-btn d-btn-ghost" id="btn-share">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><circle cx="18" cy="5" r="3"/><circle cx="6" cy="12" r="3"/><circle cx="18" cy="19" r="3"/><path d="m8.6 13.5 6.8 4M15.4 6.5l-6.8 4"/></svg>
+        ${esc(t("d.share"))}
+      </button>
       <button class="d-btn d-btn-ghost" id="btn-refly">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 12h5l2-7 4 14 2-7h7"/></svg>
         ${esc(t("d.flyto"))}
@@ -533,6 +556,15 @@ function renderDetail(m) {
   `;
   const refly = $("#btn-refly");
   if (refly) refly.addEventListener("click", () => flyToMountain(m));
+
+  // broken photos remove their figure (CSP-safe replacement for inline onerror)
+  document.querySelectorAll("#detail-body .d-photo img").forEach((img) => {
+    img.addEventListener("error", () => { const f = img.closest("figure"); if (f) f.remove(); });
+  });
+
+  // share this mountain
+  const shareBtn = $("#btn-share");
+  if (shareBtn) shareBtn.addEventListener("click", () => shareMountain(m));
 
   // want / done toggles
   document.querySelectorAll("#detail-body .d-mark").forEach((btn) => {
@@ -792,6 +824,24 @@ function flyToMountain(m) {
   });
 }
 
+const SITE_URL = "https://jyb635050-ai.github.io/weekendgo-map/";
+async function shareMountain(m) {
+  const url = `${SITE_URL}?m=${encodeURIComponent(m.id)}`;
+  const title = `${loc(m.name)} · WeekendGo`;
+  const text = LANG === "zh"
+    ? `${loc(m.name)}（${m.elevation_m}m · 难度 ${m.difficulty}/9）— 那我走·菲律宾徒步地图`
+    : `${loc(m.name)} (${m.elevation_m}m · ${m.difficulty}/9) — WeekendGo Philippines hiking map`;
+  try {
+    if (navigator.share) { await navigator.share({ title, text, url }); return; }
+  } catch (e) { if (e && e.name === "AbortError") return; }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast(t("toast.linkCopied"));
+  } catch (e) {
+    window.prompt(t("toast.linkCopied"), url);
+  }
+}
+
 function selectMountain(id) {
   const m = mountains.find((x) => x.id === id);
   if (!m) return;
@@ -941,6 +991,9 @@ function bindUI() {
   const setJoin = (open) => { joinModal.hidden = !open; document.body.classList.toggle("modal-open", open); };
   $("#btn-join").addEventListener("click", () => setJoin(true));
   joinModal.addEventListener("click", (e) => { if (e.target.closest("[data-close]")) setJoin(false); });
+  // QR fallback (CSP-safe replacement for inline onerror)
+  const qrImg = joinModal.querySelector(".join-qr img");
+  if (qrImg) qrImg.addEventListener("error", () => qrImg.closest(".join-qr").classList.add("noimg"));
 
   // mark tabs (all / want / done)
   $("#mark-tabs").addEventListener("click", (e) => {

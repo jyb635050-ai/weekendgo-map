@@ -568,12 +568,13 @@ html[data-theme="light"] .d-status { color: #B91C1C; background: color-mix(in sr
 .d-link:hover { border-color: var(--primary); color: var(--text); transform: translateX(3px); }
 .d-link svg { width: 14px; height: 14px; flex-shrink: 0; color: var(--text-3); }
 
-.d-actions { display: flex; gap: 9px; margin-top: 26px; }
+.d-actions { display: flex; gap: 7px; margin-top: 26px; }
 .d-btn {
-  flex: 1; display: inline-flex; align-items: center; justify-content: center; gap: 8px;
-  height: 46px; border-radius: var(--radius-md); font-weight: 700; font-size: 14px;
+  flex: 1; min-width: 0; display: inline-flex; align-items: center; justify-content: center; gap: 6px;
+  height: 46px; border-radius: var(--radius-md); font-weight: 700; font-size: 13px; white-space: nowrap;
   transition: transform var(--t-fast) var(--ease-spring), box-shadow var(--t-med), background var(--t-fast);
 }
+.d-btn svg { flex-shrink: 0; }
 .d-btn:active { transform: scale(.96); }
 .d-btn svg { width: 16px; height: 16px; }
 .d-btn-primary {

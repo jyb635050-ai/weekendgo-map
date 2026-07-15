@@ -6,7 +6,6 @@
 const I18N = {
   zh: {
     "hero.badge": "菲律宾国家徒步地图",
-    "hero.title": "那我走",
     "hero.tagline": "从科迪勒拉云海到棉兰老之巅，探索菲律宾群岛的每一条山脊。",
     "hero.statMountains": "座山峰",
     "hero.statRegions": "个地区",
@@ -57,8 +56,9 @@ const I18N = {
     "d.province": "所在省份",
     "d.tips": "建议与提示",
     "d.sources": "资料来源",
-    "d.gmaps": "谷歌地图导航",
+    "d.gmaps": "地图导航",
     "d.flyto": "飞到这里",
+    "d.share": "分享",
     "d.unverified": "部分数据待实地核实，出行前请以当地登记处 / 向导的最新信息为准。",
     "d.km": "公里",
     "d.tbc": "待确认",
@@ -72,8 +72,8 @@ const I18N = {
     "legend.extreme": "极限 9",
 
     "toast.orbitOn": "环绕模式已开启 — 拖动地图可退出",
-    "toast.loading": "正在加载山峰数据…",
     "toast.loadFail": "山峰数据加载失败，请刷新重试",
+    "toast.linkCopied": "链接已复制，去粘贴给朋友吧",
 
     "wx.title": "天气预报 · 按峰顶海拔",
     "wx.today": "今天", "wx.tomorrow": "明天", "wx.day2": "后天",
@@ -108,7 +108,6 @@ const I18N = {
 
   en: {
     "hero.badge": "PHILIPPINES NATIONAL HIKING MAP",
-    "hero.title": "Let's Hike",
     "hero.tagline": "From the cloud seas of the Cordillera to the summits of Mindanao — explore every ridge of the Philippine archipelago.",
     "hero.statMountains": "Mountains",
     "hero.statRegions": "Regions",
@@ -159,8 +158,9 @@ const I18N = {
     "d.province": "Province",
     "d.tips": "Tips & advice",
     "d.sources": "Sources",
-    "d.gmaps": "Google Maps",
+    "d.gmaps": "Maps",
     "d.flyto": "Fly here",
+    "d.share": "Share",
     "d.unverified": "Some data pending field verification — always confirm with the local registration office / guides before your hike.",
     "d.km": "km",
     "d.tbc": "TBC",
@@ -174,8 +174,8 @@ const I18N = {
     "legend.extreme": "Extreme 9",
 
     "toast.orbitOn": "Orbit mode on — drag the map to exit",
-    "toast.loading": "Loading mountain data…",
     "toast.loadFail": "Failed to load mountain data — please refresh",
+    "toast.linkCopied": "Link copied — share it with your friends",
 
     "wx.title": "Weather · at summit elevation",
     "wx.today": "Today", "wx.tomorrow": "Tomorrow", "wx.day2": "Day 3",
@@ -231,6 +231,9 @@ function applyI18nDom() {
   });
   document.querySelectorAll("[data-i18n-placeholder]").forEach((el) => {
     el.placeholder = t(el.dataset.i18nPlaceholder);
+  });
+  document.querySelectorAll("[data-i18n-title]").forEach((el) => {
+    el.title = t(el.dataset.i18nTitle);
   });
   document.documentElement.lang = LANG === "zh" ? "zh-CN" : "en";
   document.body.dataset.lang = LANG;

@@ -1,7 +1,7 @@
 /* WeekendGo service worker — offline tile & asset caching */
 const TILES = "wg-tiles-v1";
-const APP = "wg-app-v1";
-const DATA = "wg-data-v1";
+const APP = "wg-app-v2";
+const DATA = "wg-data-v2";
 const ALL = [TILES, APP, DATA];
 const TILE_HOSTS = [
   "server.arcgisonline.com",
