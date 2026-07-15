@@ -1,15 +1,18 @@
 /* WeekendGo service worker — offline tile & asset caching */
-const TILES = "wg-tiles-v1";
+const TILES = "wg-tiles-v2";
 const APP = "wg-app-v2";
 const DATA = "wg-data-v2";
 const ALL = [TILES, APP, DATA];
+// NOTE: cdn.jsdelivr.net is intentionally NOT cached here — the MapLibre
+// script/css use Subresource Integrity (SRI), and an opaque cached response
+// can't be validated by SRI (breaks the map). Let the browser load + HTTP-cache
+// those directly with CORS.
 const TILE_HOSTS = [
   "server.arcgisonline.com",
   "s3.amazonaws.com",
   "glyphs.geolonia.com",
   "fonts.gstatic.com",
   "fonts.googleapis.com",
-  "cdn.jsdelivr.net",
 ];
 const MAX_TILES = 1500;
 let putCount = 0;
