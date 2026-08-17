@@ -236,6 +236,7 @@ function peaksGeoJSON() {
         name_en: m.name.en || m.name.zh,
         elevation: m.elevation_m,
         difficulty: m.difficulty,
+        status_level: m.status_level || "",
       },
     })),
   };
@@ -279,6 +280,18 @@ function buildPeakLayers() {
       "circle-color": ["get", "color"],
       "circle-blur": 1.1,
       "circle-opacity": hoverOrActive(0.85, 0.5),
+    },
+  });
+  // warning ring around closed / restricted peaks (red = closed, amber = caution)
+  map.addLayer({
+    id: "peaks-warn", type: "circle", source: "peaks",
+    filter: ["in", ["get", "status_level"], ["literal", ["closed", "caution"]]],
+    paint: {
+      "circle-radius": hoverOrActive(13, 10),
+      "circle-color": "rgba(0,0,0,0)",
+      "circle-stroke-width": 2.4,
+      "circle-stroke-color": ["match", ["get", "status_level"], "closed", "#EF4444", "#F59E0B"],
+      "circle-stroke-opacity": 0.95,
     },
   });
   map.addLayer({
@@ -370,6 +383,10 @@ function applyFilters() {
   if (map.getLayer("peaks-dot")) {
     const filter = ["in", ["get", "id"], ["literal", visIds]];
     ["peaks-glow", "peaks-dot", "peaks-label"].forEach((l) => map.setFilter(l, filter));
+    if (map.getLayer("peaks-warn")) {
+      map.setFilter("peaks-warn", ["all", filter,
+        ["in", ["get", "status_level"], ["literal", ["closed", "caution"]]]]);
+    }
   }
   renderList(vis);
 }
@@ -381,6 +398,9 @@ const MARK_ICONS = {
   want: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"><path d="m12 2.8 2.9 5.9 6.5.9-4.7 4.6 1.1 6.5L12 17.6l-5.8 3.1 1.1-6.5L2.6 9.6l6.5-.9L12 2.8Z"/></svg>',
   done: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="m4 12.5 5.5 5.5L20 6.5"/></svg>',
 };
+const WARN_ICON = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>';
+const CLOSED_IDS = () => mountains.filter((m) => m.status_level === "closed").map((m) => m.id);
+const CAUTION_IDS = () => mountains.filter((m) => m.status_level === "caution").map((m) => m.id);
 const SORT_MODES = ["elevation", "difficulty", "name"];
 function sortList(vis) {
   const arr = [...vis];
@@ -413,7 +433,7 @@ function renderList(vis) {
     <button class="m-card ${m.id === activeId ? "active" : ""} ${animCls}" data-id="${esc(m.id)}" style="--i:${Math.min(i, 20)}">
       <div class="m-card-bar" style="background:${diffColor(m.difficulty)}"></div>
       <div class="m-card-main">
-        <div class="m-card-name">${esc(loc(m.name))}${marks[m.id] ? `<span class="m-mark ${marks[m.id]}">${MARK_ICONS[marks[m.id]]}</span>` : ""}</div>
+        <div class="m-card-name">${esc(loc(m.name))}${marks[m.id] ? `<span class="m-mark ${marks[m.id]}">${MARK_ICONS[marks[m.id]]}</span>` : ""}${(m.status_level === "closed" || m.status_level === "caution") ? `<span class="m-status ${m.status_level}">${WARN_ICON}${esc(t("status." + m.status_level))}</span>` : ""}</div>
         <div class="m-card-sub">${esc(t("region." + m.region_key))} · ${esc(loc(m.province))}</div>
       </div>
       <div class="m-card-right">
@@ -483,7 +503,7 @@ function renderDetail(m) {
       <span class="badge">${esc(t("type." + (m.type || "minor")))}</span>
     </div>
 
-    ${m.status ? `<div class="d-status">
+    ${m.status ? `<div class="d-status ${m.status_level || "caution"}">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v4m0 4h.01M10.3 3.9 1.8 18a2 2 0 0 0 1.7 3h17a2 2 0 0 0 1.7-3L13.7 3.9a2 2 0 0 0-3.4 0Z"/></svg>
       <span>${esc(loc(m.status))}</span>
     </div>` : ""}

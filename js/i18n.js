@@ -60,6 +60,9 @@ const I18N = {
     "d.flyto": "飞到这里",
     "d.share": "分享",
     "d.unverified": "部分数据待实地核实，出行前请以当地登记处 / 向导的最新信息为准。",
+    "status.closed": "禁止徒步",
+    "status.caution": "限制 · 需核实",
+    "status.info": "需预约",
     "d.km": "公里",
     "d.tbc": "待确认",
 
@@ -162,6 +165,9 @@ const I18N = {
     "d.flyto": "Fly here",
     "d.share": "Share",
     "d.unverified": "Some data pending field verification — always confirm with the local registration office / guides before your hike.",
+    "status.closed": "CLOSED",
+    "status.caution": "Restricted",
+    "status.info": "Booking",
     "d.km": "km",
     "d.tbc": "TBC",
 
