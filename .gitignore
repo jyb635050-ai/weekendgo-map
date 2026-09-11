@@ -1,0 +1,4 @@
+# trail pipeline caches (raw Overpass responses, DEM lookups)
+tools/.cache/
+__pycache__/
+*.pyc

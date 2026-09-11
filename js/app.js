@@ -180,8 +180,8 @@ function initMap() {
 
   map.touchZoomRotate.enableRotation();
   map.addControl(new maplibregl.NavigationControl({ visualizePitch: true, showZoom: true }), "bottom-right");
-  map.on("dragstart", stopOrbit);
-  map.on("wheel", stopOrbit);
+  map.on("dragstart", () => { stopOrbit(); autoFitToken++; });
+  map.on("wheel", () => { stopOrbit(); autoFitToken++; });
   map.on("error", (e) => console.warn("[map]", e && e.error && e.error.message));
 
   // clicking empty map closes the detail panel
@@ -616,7 +616,12 @@ function renderDetail(m) {
   }
 }
 
-function openDetail() { $("#detail").classList.add("open"); $("#detail").setAttribute("aria-hidden", "false"); }
+function openDetail() {
+  const ds = $("#detail .detail-scroll");
+  if (ds) ds.scrollTop = 0;              // every newly opened mountain starts at its title
+  $("#detail").classList.add("open");
+  $("#detail").setAttribute("aria-hidden", "false");
+}
 function closeDetail() {
   $("#detail").classList.remove("open");
   $("#detail").setAttribute("aria-hidden", "true");
@@ -689,42 +694,81 @@ async function loadWeather(m) {
 }
 
 /* ============================================================
-   TRAILS (OSM route + elevation profile)
+   TRAILS — multiple named routes per mountain, each with its own
+   colour, elevation profile, freshness date and GPX export
    ============================================================ */
-const TRAIL_LAYERS = ["trail-net", "trail-route-glow", "trail-route", "trail-pos"];
+const TRAIL_LAYERS = ["trail-net", "trail-routes-glow", "trail-routes", "trail-pos"];
+const ROUTE_COLORS = ["#FB923C", "#22D3EE", "#A3E635", "#F472B6", "#A78BFA", "#FACC15"];
+const STALE_YEARS = 5;
+let trailState = null;        // { id, routes, net, active }
+let autoFitToken = 0;
+
+function hav(a, b) {
+  const R = Math.PI / 180;
+  const h = Math.sin((b[1] - a[1]) * R / 2) ** 2 +
+    Math.cos(a[1] * R) * Math.cos(b[1] * R) * Math.sin((b[0] - a[0]) * R / 2) ** 2;
+  return 12742000 * Math.asin(Math.sqrt(h));
+}
+
+/* accept both the multi-route format and the older single-route files */
+function normalizeTrail(tr) {
+  const routes = Array.isArray(tr.routes) ? tr.routes : [{
+    name: { en: "Summit route", zh: "登顶路线" }, source: "osm-derived",
+    line: tr.route, pts: tr.route, ele: tr.ele, dist_km: tr.dist_km, ascent_m: tr.ascent_m, updated: null,
+  }];
+  return routes
+    .filter((r) => (r.pts || r.line) && r.ele && r.ele.length > 1)
+    .map((r, i) => ({ ...r, line: r.line || r.pts, pts: r.pts || r.line, color: ROUTE_COLORS[i % ROUTE_COLORS.length] }));
+}
+
+function routeAgeYears(r) {
+  if (!r.updated) return null;
+  const [y, mo] = r.updated.split("-").map(Number);
+  const now = new Date();
+  return now.getFullYear() + now.getMonth() / 12 - (y + ((mo || 1) - 1) / 12);
+}
 
 function clearTrailLayers() {
   TRAIL_LAYERS.forEach((l) => { if (map.getLayer(l)) map.removeLayer(l); });
-  ["trail-net", "trail-route", "trail-pos"].forEach((s) => { if (map.getSource(s)) map.removeSource(s); });
+  ["trail-net", "trail-routes", "trail-pos"].forEach((s) => { if (map.getSource(s)) map.removeSource(s); });
+  trailState = null;
 }
 
-function addTrailLayers(tr) {
-  clearTrailLayers();
+function addTrailLayers(net, routes) {
+  if (map.getLayer("trail-routes")) {
+    TRAIL_LAYERS.forEach((l) => { if (map.getLayer(l)) map.removeLayer(l); });
+    ["trail-net", "trail-routes", "trail-pos"].forEach((s) => { if (map.getSource(s)) map.removeSource(s); });
+  }
   const before = map.getLayer("peaks-glow") ? "peaks-glow" : undefined;
   map.addSource("trail-net", {
     type: "geojson",
-    data: { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: tr.net || [] } },
+    data: { type: "Feature", properties: {}, geometry: { type: "MultiLineString", coordinates: net || [] } },
   });
-  map.addSource("trail-route", {
+  map.addSource("trail-routes", {
     type: "geojson",
-    attribution: "Trails © OpenStreetMap contributors",
-    data: { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: tr.route } },
+    attribution: "Trails © OpenStreetMap contributors (ODbL)",
+    data: {
+      type: "FeatureCollection",
+      features: routes.map((r, i) => ({
+        type: "Feature", properties: { i, color: r.color },
+        geometry: { type: "LineString", coordinates: r.line },
+      })),
+    },
   });
   map.addLayer({
     id: "trail-net", type: "line", source: "trail-net",
-    paint: { "line-color": "rgba(255,255,255,0.38)", "line-width": 1.1, "line-dasharray": [2, 2.5] },
+    paint: { "line-color": "rgba(255,255,255,0.32)", "line-width": 1, "line-dasharray": [2, 2.5] },
   }, before);
   map.addLayer({
-    id: "trail-route-glow", type: "line", source: "trail-route",
+    id: "trail-routes-glow", type: "line", source: "trail-routes",
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#FB923C", "line-width": 8, "line-blur": 4, "line-opacity": 0.4 },
+    paint: { "line-color": ["get", "color"], "line-width": 9, "line-blur": 5, "line-opacity": 0.3 },
   }, before);
   map.addLayer({
-    id: "trail-route", type: "line", source: "trail-route",
+    id: "trail-routes", type: "line", source: "trail-routes",
     layout: { "line-cap": "round", "line-join": "round" },
-    paint: { "line-color": "#FB923C", "line-width": 2.6 },
+    paint: { "line-color": ["get", "color"], "line-width": 2.6, "line-opacity": 0.9 },
   }, before);
-  // hover position dot (driven by the elevation profile)
   map.addSource("trail-pos", { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   map.addLayer({
     id: "trail-pos", type: "circle", source: "trail-pos",
@@ -732,9 +776,44 @@ function addTrailLayers(tr) {
   }, before);
 }
 
-function profileSVG(tr) {
-  const ele = tr.ele || [];
-  if (ele.length < 5) return "";
+/* emphasise one route on the map, others stay visible but quieter */
+function styleActiveRoute(i, color) {
+  if (!map.getLayer("trail-routes")) return;
+  const isA = ["==", ["get", "i"], i];
+  map.setPaintProperty("trail-routes", "line-width", ["case", isA, 3.6, 2.2]);
+  map.setPaintProperty("trail-routes", "line-opacity", ["case", isA, 1, 0.55]);
+  map.setPaintProperty("trail-routes-glow", "line-opacity", ["case", isA, 0.5, 0.08]);
+  map.setLayoutProperty("trail-routes", "line-sort-key", ["case", isA, 10, 0]);
+  map.setLayoutProperty("trail-routes-glow", "line-sort-key", ["case", isA, 10, 0]);
+  map.setPaintProperty("trail-pos", "circle-stroke-color", color);
+}
+
+function routePadding() {
+  if (window.matchMedia("(max-width: 860px)").matches) {
+    return { top: 90, bottom: Math.round(window.innerHeight * 0.64), left: 30, right: 30 };
+  }
+  const listOpen = !$("#list-drawer").classList.contains("closed");
+  return { top: 110, bottom: 60, left: listOpen ? 390 : 70, right: 480 };
+}
+
+function fitRoutes(lines) {
+  const b = new maplibregl.LngLatBounds();
+  lines.forEach((ln) => ln.forEach((p) => b.extend(p)));
+  if (b.isEmpty()) return;
+  // cameraForBounds solves the fit top-down (and offsets the centre for the side panels);
+  // a tilted 3D camera magnifies the near edge, so back off a little zoom to keep it all in view
+  const pitch = Math.min(map.getPitch(), 58);
+  const cam = map.cameraForBounds(b, { padding: routePadding(), bearing: map.getBearing() });
+  if (!cam) return;
+  map.flyTo({
+    center: cam.center, zoom: Math.min(14, cam.zoom - (pitch / 60) * 0.65),
+    pitch, bearing: map.getBearing(), duration: prefersReducedMotion ? 0 : 1400, essential: true,
+  });
+}
+
+function profileSVG(r) {
+  const ele = r.ele || [];
+  if (ele.length < 2) return "";
   const W = 340, H = 118, L = 36, R = 8, T = 12, B = 20;
   const min = Math.min(...ele), max = Math.max(...ele);
   const span = Math.max(max - min, 10);
@@ -745,31 +824,31 @@ function profileSVG(tr) {
   const area = `${d}L${x(ele.length - 1).toFixed(1)},${H - B}L${x(0).toFixed(1)},${H - B}Z`;
   return `<svg viewBox="0 0 ${W} ${H}" class="pf-svg" role="img" aria-label="elevation profile">
     <defs><linearGradient id="pf-g" x1="0" y1="0" x2="0" y2="1">
-      <stop offset="0" stop-color="#FB923C" stop-opacity="0.4"/>
-      <stop offset="1" stop-color="#FB923C" stop-opacity="0"/>
+      <stop offset="0" stop-color="${r.color}" stop-opacity="0.42"/>
+      <stop offset="1" stop-color="${r.color}" stop-opacity="0"/>
     </linearGradient></defs>
     <line x1="${L}" y1="${y(max)}" x2="${W - R}" y2="${y(max)}" class="pf-grid"/>
     <line x1="${L}" y1="${H - B}" x2="${W - R}" y2="${H - B}" class="pf-grid"/>
     <path d="${area}" fill="url(#pf-g)"/>
-    <path d="${d}" fill="none" stroke="#FB923C" stroke-width="2" stroke-linejoin="round"/>
+    <path d="${d}" fill="none" stroke="${r.color}" stroke-width="2" stroke-linejoin="round"/>
     <text x="${L - 5}" y="${y(max) + 4}" class="pf-lb" text-anchor="end">${max}</text>
     <text x="${L - 5}" y="${H - B + 4}" class="pf-lb" text-anchor="end">${min}</text>
     <text x="${L}" y="${H - 5}" class="pf-lb">0</text>
-    <text x="${W - R}" y="${H - 5}" class="pf-lb" text-anchor="end">${tr.dist_km} km</text>
+    <text x="${W - R}" y="${H - 5}" class="pf-lb" text-anchor="end">${r.dist_km} km</text>
     <line class="pf-cursor" x1="0" x2="0" y1="${T}" y2="${H - B}" visibility="hidden"/>
-    <circle class="pf-cursor-dot" r="3.5" visibility="hidden"/>
+    <circle class="pf-cursor-dot" r="3.5" visibility="hidden" style="stroke:${r.color}"/>
   </svg>`;
 }
 
 /* interactive hover on the elevation profile: cursor line + tip + map position dot */
-function attachProfileHover(wrap, tr) {
+function attachProfileHover(wrap, r) {
   const svg = wrap.querySelector(".pf-svg");
   const tip = wrap.querySelector(".pf-tip");
   if (!svg || !tip) return;
   const cursor = svg.querySelector(".pf-cursor");
   const dot = svg.querySelector(".pf-cursor-dot");
   const W = 340, H = 118, L = 36, R = 8, T = 12, B = 20;
-  const ele = tr.ele, n = ele.length;
+  const ele = r.ele, n = ele.length;
   const min = Math.min(...ele), span = Math.max(Math.max(...ele) - min, 10);
   const move = (clientX) => {
     const rect = svg.getBoundingClientRect();
@@ -781,10 +860,10 @@ function attachProfileHover(wrap, tr) {
     cursor.setAttribute("x1", x); cursor.setAttribute("x2", x); cursor.removeAttribute("visibility");
     dot.setAttribute("cx", x); dot.setAttribute("cy", yy); dot.removeAttribute("visibility");
     tip.hidden = false;
-    tip.textContent = `${(frac * tr.dist_km).toFixed(1)} km · ${ele[i]} m`;
+    tip.textContent = `${(frac * r.dist_km).toFixed(1)} km · ${ele[i]} m`;
     tip.style.left = `${(x / W) * 100}%`;
     const src = map.getSource("trail-pos");
-    if (src && tr.route[i]) src.setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: tr.route[i] } });
+    if (src && r.pts[i]) src.setData({ type: "Feature", properties: {}, geometry: { type: "Point", coordinates: r.pts[i] } });
   };
   const leave = () => {
     cursor.setAttribute("visibility", "hidden");
@@ -799,8 +878,101 @@ function attachProfileHover(wrap, tr) {
   svg.addEventListener("touchend", leave);
 }
 
-async function showTrail(m) {
+function routeSourceLabel(r) {
+  const src = t("rt.src." + (r.source || "osm-derived"));
+  return r.updated ? `${src} · ${r.updated}` : src;
+}
+
+/* GPX 1.1 export of one route (elevation interpolated onto the drawn line) */
+function downloadGpx(m, r) {
+  const line = r.line, pts = r.pts, ele = r.ele;
+  const pc = [0];
+  for (let i = 1; i < pts.length; i++) pc.push(pc[i - 1] + hav(pts[i - 1], pts[i]));
+  const eleAt = (d) => {
+    let j = 1;
+    while (j < pc.length - 1 && pc[j] < d) j++;
+    const d0 = pc[j - 1], d1 = pc[j] || d0;
+    const f = d1 > d0 ? Math.min(1, Math.max(0, (d - d0) / (d1 - d0))) : 0;
+    return Math.round(ele[j - 1] + (ele[j] - ele[j - 1]) * f);
+  };
+  const xe = (s) => String(s).replace(/[<>&"']/g, (c) => ({ "<": "&lt;", ">": "&gt;", "&": "&amp;", '"': "&quot;", "'": "&apos;" }[c]));
+  let acc = 0;
+  const trkpts = line.map((p, i) => {
+    if (i) acc += hav(line[i - 1], p);
+    return `<trkpt lat="${p[1]}" lon="${p[0]}"><ele>${eleAt(acc)}</ele></trkpt>`;
+  }).join("\n");
+  const title = `${m.name.en} — ${r.name.en}`;
+  const osm = (r.source || "").startsWith("osm");
+  const gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="WeekendGo · 那我走" xmlns="http://www.topografix.com/GPX/1/1">
+<metadata><name>${xe(title)}</name>
+<desc>${xe(`${r.dist_km} km, +${r.ascent_m} m, trailhead to summit. For reference only — follow local guides.`)}</desc>
+${osm ? `<copyright author="OpenStreetMap contributors"><license>https://opendatacommons.org/licenses/odbl/</license></copyright>` : ""}
+<link href="${SITE_URL}?m=${encodeURIComponent(m.id)}"><text>WeekendGo Philippines hiking map</text></link></metadata>
+<trk><name>${xe(title)}</name><src>${xe(r.source || "")}</src><trkseg>
+${trkpts}
+</trkseg></trk>
+</gpx>`;
+  const url = URL.createObjectURL(new Blob([gpx], { type: "application/gpx+xml" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `weekendgo-${m.id}-${r.name.en.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "")}.gpx`;
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 5000);
+}
+
+/* render the route cards + stats + profile for the active route */
+function renderTrailPanel(m) {
+  const sec = $("#trail-sec");
+  if (!sec || !trailState) return;
+  const { routes, active } = trailState;
+  const r = routes[active];
+  const age = routeAgeYears(r);
+  const stale = age !== null && age > STALE_YEARS;
+  sec.hidden = false;
+  sec.querySelector("#trail-body").innerHTML = `
+    ${routes.length > 1 ? `<div class="rt-count">${esc(t("rt.count").replace("{n}", routes.length))}</div>` : ""}
+    <div class="rt-list">${routes.map((x, i) => {
+      const xa = routeAgeYears(x);
+      return `<button class="rt-chip ${i === active ? "on" : ""}" data-i="${i}" style="--rc:${x.color}">
+        <i class="rt-dot"></i>
+        <span class="rt-name">${esc(loc(x.name))}${x.main ? `<em class="rt-main">${esc(t("rt.main"))}</em>` : ""}${x.source === "weekendgo" ? `<em class="rt-own">${esc(t("rt.src.weekendgo"))}</em>` : ""}</span>
+        <span class="rt-meta">${x.dist_km} km · +${x.ascent_m.toLocaleString()} m</span>
+        <span class="rt-src ${xa !== null && xa > STALE_YEARS ? "old" : ""}">${esc(routeSourceLabel(x))}</span>
+      </button>`;
+    }).join("")}</div>
+    <div class="pf-stats">
+      <span><b>${r.dist_km}</b> km · ${esc(t("d.trailOneWay"))}</span>
+      <span><b>+${r.ascent_m.toLocaleString()}</b> m · ${esc(t("d.trailAscent"))}</span>
+    </div>
+    <div class="pf-wrap">${profileSVG(r)}<div class="pf-tip" hidden></div></div>
+    ${stale ? `<div class="rt-stale">${WARN_ICON}<span>${esc(t("rt.stale").replace("{d}", r.updated))}</span></div>` : ""}
+    <div class="rt-actions">
+      <button class="d-btn d-btn-ghost rt-gpx" title="${esc(t("rt.gpxHint"))}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 3v12m0 0-4.5-4.5M12 15l4.5-4.5M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>
+        ${esc(t("rt.gpx"))}
+      </button>
+    </div>
+    <p class="pf-note">${esc(t(r.source === "weekendgo" ? "rt.ownNote" : "d.trailNote"))}</p>`;
+  attachProfileHover(sec.querySelector(".pf-wrap"), r);
+  sec.querySelectorAll(".rt-chip").forEach((b) => b.addEventListener("click", () => {
+    const i = Number(b.dataset.i);
+    if (!trailState || i === trailState.active) { if (trailState) fitRoutes([trailState.routes[i].line]); return; }
+    trailState.active = i;
+    styleActiveRoute(i, trailState.routes[i].color);
+    renderTrailPanel(m);
+    fitRoutes([trailState.routes[i].line]);
+  }));
+  sec.querySelector(".rt-gpx").addEventListener("click", () => downloadGpx(m, r));
+}
+
+async function showTrail(m, keepActive = false) {
+  const prevActive = keepActive && trailState && trailState.id === m.id ? trailState.active : null;
   clearTrailLayers();
+  const sec = $("#trail-sec");
+  if (sec) sec.hidden = true;
   if (!trailIds.has(m.id)) return;
   const token = ++trailToken;
   let tr = trailCache[m.id];
@@ -813,18 +985,22 @@ async function showTrail(m) {
     } catch (err) { return; }
   }
   if (token !== trailToken || activeId !== m.id) return;   // superseded selection
-  addTrailLayers(tr);
-  const sec = $("#trail-sec");
-  if (sec) {
-    sec.hidden = false;
-    sec.querySelector("#trail-body").innerHTML = `
-      <div class="pf-stats">
-        <span><b>${tr.dist_km}</b> km · ${esc(t("d.trailOneWay"))}</span>
-        <span><b>+${tr.ascent_m.toLocaleString()}</b> m · ${esc(t("d.trailAscent"))}</span>
-      </div>
-      <div class="pf-wrap">${profileSVG(tr)}<div class="pf-tip" hidden></div></div>
-      <p class="pf-note">${esc(t("d.trailNote"))}</p>`;
-    attachProfileHover(sec.querySelector(".pf-wrap"), tr);
+  const routes = normalizeTrail(tr);
+  if (!routes.length) return;
+  // default: our own GPS track > the main (jump-off) route > first
+  const own = routes.findIndex((r) => r.source === "weekendgo");
+  const main = routes.findIndex((r) => r.main);
+  const dflt = own >= 0 ? own : main >= 0 ? main : 0;
+  const active = prevActive !== null && prevActive < routes.length ? prevActive : dflt;
+  addTrailLayers(tr.net, routes);
+  trailState = { id: m.id, routes, active };
+  styleActiveRoute(active, routes[active].color);
+  renderTrailPanel(m);
+  // reveal every route once the fly-in camera has landed (unless the user took over)
+  if (routes.length > 1 && !keepActive) {
+    const myFit = ++autoFitToken;
+    const go = () => { if (myFit === autoFitToken && trailState && trailState.id === m.id) fitRoutes(routes.map((r) => r.line)); };
+    if (map.isMoving()) map.once("moveend", go); else go();
   }
 }
 
@@ -1057,7 +1233,7 @@ function bindUI() {
     applyFilters();
     if (activeId) {
       const m = mountains.find((x) => x.id === activeId);
-      if (m) { renderDetail(m); showTrail(m); loadWeather(m); }
+      if (m) { renderDetail(m); showTrail(m, true); loadWeather(m); }
     }
   });
 }
