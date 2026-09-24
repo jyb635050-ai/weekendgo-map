@@ -505,10 +505,9 @@ export function extruderSlots(colors) {
 }
 
 /* ---------------------------------------------------------------- 3MF
-   One printable object built from parts (3MF core <components>), each part carrying its
-   own colour + extruder in Metadata/model_settings.config. Separate top-level objects would
-   NOT work here: slicers drop every object onto the bed on its own, so the label and the
-   trail (which float on the terrain's walls/surface) would fall off the model. */
+   One printable object built from parts (3MF <components>), each part carrying its own filament
+   slot. Separate top-level objects would NOT work: slicers drop every object onto the bed on its
+   own, so the label and the trail would fall off the model. */
 const x3 = (s) => String(s).replace(/[&<>"]/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const hex8 = (c) => {
   let h = String(c || "#CCCCCC").trim();
@@ -517,60 +516,131 @@ const hex8 = (c) => {
   return (h.length === 7 ? h + "FF" : h).toUpperCase();
 };
 
-export function build3MF(parts, meta = {}) {
-  const use = parts.filter((p) => p && p.triVerts.length >= 3);
-  if (!use.length) throw new Error("empty model");
-  const palette = [];
-  const pidx = (c) => { const h = hex8(c); let i = palette.indexOf(h); if (i < 0) { palette.push(h); i = palette.length - 1; } return i; };
-  const idx = use.map((p) => pidx(p.color));
+const XML_HEAD = '<?xml version="1.0" encoding="UTF-8"?>\n';
+const NS_MODEL = 'xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02"';
+const NS_BAMBU = 'xmlns:BambuStudio="http://schemas.bambulab.com/package/2021" '
+  + 'xmlns:p="http://schemas.microsoft.com/3dmanufacturing/production/2015/06" requiredextensions="p"';
+const CONTENT_TYPES = XML_HEAD + '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+  + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+  + '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/>'
+  + '<Default Extension="png" ContentType="image/png"/></Types>';
+const rels = (target) => XML_HEAD + '<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
+  + `<Relationship Target="${target}" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>`;
+const uuid = (a, b) => `${a.toString(16).padStart(8, "0")}-${b.toString(16).padStart(4, "0")}-4000-8000-000000000000`;
 
-  const out = ['<?xml version="1.0" encoding="UTF-8"?>\n',
-    '<model unit="millimeter" xml:lang="en-US" xmlns="http://schemas.microsoft.com/3dmanufacturing/core/2015/02">\n'];
-  for (const [k, v] of Object.entries({ Title: meta.title, Designer: meta.designer, Description: meta.description,
-    Copyright: meta.copyright, Application: "WeekendGo relief generator" })) {
-    if (v) out.push(` <metadata name="${k}">${x3(v)}</metadata>\n`);
+function meshXml(p, out, attrs) {
+  const vp = p.vertProperties, tv = p.triVerts;
+  out.push(`  <object id="${p._id}" ${attrs} type="model">\n   <mesh>\n    <vertices>\n`);
+  const chunk = [];
+  for (let i = 0; i < p.numVert; i++) {
+    const q = i * 3;
+    chunk.push(`     <vertex x="${vp[q].toFixed(3)}" y="${vp[q + 1].toFixed(3)}" z="${vp[q + 2].toFixed(3)}"/>\n`);
+    if (chunk.length > 4096) { out.push(chunk.join("")); chunk.length = 0; }
   }
-  out.push(' <resources>\n  <basematerials id="1">\n');
-  palette.forEach((h, i) => out.push(`   <base name="Color${i + 1}" displaycolor="${h}"/>\n`));
-  out.push("  </basematerials>\n");
-  const asm = use.length + 2;                                      // the assembly object id
-  const cfg = ['<?xml version="1.0" encoding="UTF-8"?>\n<config>\n',
-    ` <object id="${asm}">\n  <metadata key="name" value="${x3(meta.title || "Relief")}"/>\n  <metadata key="extruder" value="1"/>\n`];
-  const comps = [];
-  use.forEach((p, n) => {
-    const id = n + 2, vp = p.vertProperties, tv = p.triVerts;
-    out.push(`  <object id="${id}" name="${x3(p.name)}" type="model" pid="1" pindex="${idx[n]}">\n   <mesh>\n    <vertices>\n`);
-    const chunk = [];
-    for (let i = 0; i < p.numVert; i++) {
-      const q = i * 3;
-      chunk.push(`     <vertex x="${vp[q].toFixed(3)}" y="${vp[q + 1].toFixed(3)}" z="${vp[q + 2].toFixed(3)}"/>\n`);
-      if (chunk.length > 4096) { out.push(chunk.join("")); chunk.length = 0; }
-    }
-    out.push(chunk.join(""), "    </vertices>\n    <triangles>\n");
-    chunk.length = 0;
-    for (let i = 0; i < tv.length; i += 3) {
-      chunk.push(`     <triangle v1="${tv[i]}" v2="${tv[i + 1]}" v3="${tv[i + 2]}"/>\n`);
-      if (chunk.length > 4096) { out.push(chunk.join("")); chunk.length = 0; }
-    }
-    out.push(chunk.join(""), "    </triangles>\n   </mesh>\n  </object>\n");
-    cfg.push(`  <part id="${id}" subtype="normal_part">\n   <metadata key="name" value="${x3(p.name)}"/>\n   <metadata key="extruder" value="${p.extruder || 1}"/>\n  </part>\n`);
-    comps.push(`   <component objectid="${id}"/>\n`);
-  });
-  out.push(`  <object id="${asm}" name="${x3(meta.title || "Relief")}" type="model">\n   <components>\n`, comps.join(""),
-    "   </components>\n  </object>\n");
-  out.push(" </resources>\n", ` <build>\n  <item objectid="${asm}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n </build>\n</model>\n`);
-  cfg.push(" </object>\n</config>\n");
+  out.push(chunk.join(""), "    </vertices>\n    <triangles>\n");
+  chunk.length = 0;
+  for (let i = 0; i < tv.length; i += 3) {
+    chunk.push(`     <triangle v1="${tv[i]}" v2="${tv[i + 1]}" v3="${tv[i + 2]}"/>\n`);
+    if (chunk.length > 4096) { out.push(chunk.join("")); chunk.length = 0; }
+  }
+  out.push(chunk.join(""), "    </triangles>\n   </mesh>\n  </object>\n");
+}
 
-  const types = '<?xml version="1.0" encoding="UTF-8"?>\n<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
-    + '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
-    + '<Default Extension="model" ContentType="application/vnd.ms-package.3dmanufacturing-3dmodel+xml"/></Types>';
-  const rels = '<?xml version="1.0" encoding="UTF-8"?>\n<Relationships xmlns="http://schemas.openxmlformats.org/package/2006/relationships">'
-    + '<Relationship Target="/3D/3dmodel.model" Id="rel-1" Type="http://schemas.microsoft.com/3dmanufacturing/2013/01/3dmodel"/></Relationships>';
+/* purge volume (mm³) when switching filament colours — a rough fit to Bambu Studio's own
+   auto-calculated values: more for a bigger colour change, most when going dark -> light */
+function flushVolume(from, to) {
+  const rgb = (h) => [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16) / 255);
+  const lum = (c) => 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2];
+  const a = rgb(from), b = rgb(to);
+  const d = Math.hypot(a[0] - b[0], a[1] - b[1], a[2] - b[2]);
+  return Math.round(Math.min(800, Math.max(100, 90 + 150 * d + 400 * Math.max(0, lum(b) - lum(a)))));
+}
+
+/**
+ * parts: [{ name, color, extruder (1-based filament slot), vertProperties, triVerts, numVert }]
+ * project: optional Bambu Studio template (data/bambu/a1_project.json). With it the file is written
+ *   the way Bambu Studio writes its own projects — one object made of parts, a filament list with
+ *   the chosen colours, printer/process presets — so it opens already coloured. Without it: plain
+ *   3MF core (colours only as basematerials, which Bambu Studio ignores).
+ */
+export function build3MF(parts, meta = {}, project = null) {
+  const use = parts.filter((p) => p && p.triVerts.length >= 3).map((p, i) => ({ ...p, _id: i + 1 }));
+  if (!use.length) throw new Error("empty model");
+  const asm = use.length + 1;
+  const title = meta.title || "Relief";
+  const metaXml = (extra) => Object.entries({ ...extra, Title: meta.title, Designer: meta.designer,
+    Description: meta.description, Copyright: meta.copyright })
+    .filter(([, v]) => v).map(([k, v]) => ` <metadata name="${k}">${x3(v)}</metadata>\n`).join("");
+
+  // filament slots -> colour (first part using the slot decides)
+  const nFil = Math.max(...use.map((p) => p.extruder || 1));
+  const filColors = [];
+  for (let s = 1; s <= nFil; s++) filColors.push(hex8((use.find((p) => (p.extruder || 1) === s) || use[0]).color).slice(0, 7));
+
+  const cfg = [XML_HEAD, "<config>\n", ` <object id="${asm}">\n  <metadata key="name" value="${x3(title)}"/>\n  <metadata key="extruder" value="1"/>\n`];
+  for (const p of use) {
+    cfg.push(`  <part id="${p._id}" subtype="normal_part">\n   <metadata key="name" value="${x3(p.name)}"/>\n`
+      + `   <metadata key="matrix" value="1 0 0 0 0 1 0 0 0 0 1 0 0 0 0 1"/>\n   <metadata key="extruder" value="${p.extruder || 1}"/>\n  </part>\n`);
+  }
+  cfg.push(" </object>\n");
+
+  if (!project) {
+    const palette = [];
+    const pidx = (c) => { const h = hex8(c); let i = palette.indexOf(h); if (i < 0) { palette.push(h); i = palette.length - 1; } return i; };
+    const out = [XML_HEAD, `<model unit="millimeter" xml:lang="en-US" ${NS_MODEL}>\n`,
+      metaXml({ Application: "WeekendGo relief generator" }), " <resources>\n  <basematerials id=\"1000\">\n"];
+    const idx = use.map((p) => pidx(p.color));
+    palette.forEach((h, i) => out.push(`   <base name="Color${i + 1}" displaycolor="${h}"/>\n`));
+    out.push("  </basematerials>\n");
+    use.forEach((p, n) => meshXml(p, out, `name="${x3(p.name)}" pid="1000" pindex="${idx[n]}"`));
+    out.push(`  <object id="${asm}" name="${x3(title)}" type="model">\n   <components>\n`,
+      use.map((p) => `    <component objectid="${p._id}"/>\n`).join(""), "   </components>\n  </object>\n </resources>\n",
+      ` <build>\n  <item objectid="${asm}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n </build>\n</model>\n`);
+    cfg.push("</config>\n");
+    return zipSync({
+      "[Content_Types].xml": strToU8(CONTENT_TYPES), "_rels/.rels": strToU8(rels("/3D/3dmodel.model")),
+      "3D/3dmodel.model": strToU8(out.join("")), "Metadata/model_settings.config": strToU8(cfg.join("")),
+    }, { level: 6 });
+  }
+
+  // ---- Bambu Studio project layout: meshes in 3D/Objects/object_1.model, assembly in 3dmodel.model
+  const objXml = [XML_HEAD, `<model unit="millimeter" xml:lang="en-US" ${NS_MODEL} ${NS_BAMBU}>\n`,
+    ' <metadata name="BambuStudio:3mfVersion">1</metadata>\n <resources>\n'];
+  use.forEach((p) => meshXml(p, objXml, `p:UUID="${uuid(0x10000 + p._id - 1, 0x81cb)}"`));
+  objXml.push(" </resources>\n <build/>\n</model>\n");
+
+  const today = new Date().toISOString().slice(0, 10);
+  const model = [XML_HEAD, `<model unit="millimeter" xml:lang="en-US" ${NS_MODEL} ${NS_BAMBU}>\n`,
+    metaXml({ Application: project.application, "BambuStudio:3mfVersion": "1", CreationDate: today, ModificationDate: today }),
+    " <resources>\n", `  <object id="${asm}" p:UUID="${uuid(asm, 0x61cb)}" type="model">\n   <components>\n`];
+  for (const p of use) {
+    model.push(`    <component p:path="/3D/Objects/object_1.model" objectid="${p._id}" p:UUID="${uuid(0x10000 + p._id - 1, 0xb206)}" transform="1 0 0 0 1 0 0 0 1 0 0 0"/>\n`);
+  }
+  model.push("   </components>\n  </object>\n </resources>\n",
+    ` <build p:UUID="${uuid(0x2c7c17d8, 0x22b5)}">\n  <item objectid="${asm}" p:UUID="${uuid(asm, 0xb1ec)}" transform="1 0 0 0 1 0 0 0 1 0 0 0" printable="1"/>\n </build>\n</model>\n`);
+
+  cfg.push(" <plate>\n  <metadata key=\"plater_id\" value=\"1\"/>\n  <metadata key=\"plater_name\" value=\"\"/>\n"
+    + "  <metadata key=\"locked\" value=\"false\"/>\n  <metadata key=\"filament_map_mode\" value=\"Auto For Flush\"/>\n"
+    + `  <metadata key="filament_maps" value="${filColors.map(() => 1).join(" ")}"/>\n`
+    + `  <model_instance>\n   <metadata key="object_id" value="${asm}"/>\n   <metadata key="instance_id" value="0"/>\n`
+    + `   <metadata key="identify_id" value="${asm + 100}"/>\n  </model_instance>\n </plate>\n <assemble>\n </assemble>\n</config>\n`);
+
+  // project settings: repeat every per-filament value once per colour
+  const c = JSON.parse(JSON.stringify(project.config));
+  for (const k of project.perFilament) c[k] = filColors.map(() => c[k][0]);
+  for (const k of project.plusTwo) c[k] = Array(filColors.length + 2).fill("");
+  c.filament_colour = filColors;
+  c.filament_self_index = filColors.map((_, i) => String(i + 1));
+  c.flush_volumes_matrix = filColors.flatMap((a) => filColors.map((b) => String(a === b ? 0 : flushVolume(a, b))));
+
   return zipSync({
-    "[Content_Types].xml": strToU8(types),
-    "_rels/.rels": strToU8(rels),
-    "3D/3dmodel.model": strToU8(out.join("")),
+    "[Content_Types].xml": strToU8(CONTENT_TYPES),
+    "_rels/.rels": strToU8(rels("/3D/3dmodel.model")),
+    "3D/3dmodel.model": strToU8(model.join("")),
+    "3D/_rels/3dmodel.model.rels": strToU8(rels("/3D/Objects/object_1.model")),
+    "3D/Objects/object_1.model": strToU8(objXml.join("")),
     "Metadata/model_settings.config": strToU8(cfg.join("")),
+    "Metadata/project_settings.config": strToU8(JSON.stringify(c, null, 4)),
   }, { level: 6 });
 }
 

@@ -23,6 +23,7 @@ let genToken = 0;
 let genTimer = null;
 const tiles = new Map(); // "z/x/y" -> Promise<{data, ch, size}>
 let fontP = null;
+let bambuP = null;         // Bambu Studio project template (filament list, printer/process)
 const trailFiles = {};
 
 const T = (k) => ctx.t("p3." + k);
@@ -36,6 +37,13 @@ function loadFont() {
     .then(parseFont)
     .catch((e) => { fontP = null; throw e; });
   return fontP;
+}
+
+function loadBambu() {
+  bambuP ??= fetch(new URL("../data/bambu/a1_project.json", import.meta.url))
+    .then((r) => { if (!r.ok) throw new Error("bambu " + r.status); return r.json(); })
+    .catch((e) => { bambuP = null; throw e; });
+  return bambuP;
 }
 
 function loadTile({ z, x, y }) {
@@ -233,6 +241,7 @@ async function generate() {
   try {
     busy(T("loading"));
     const plan = planTiles(lng0, lat0, halfM, cell * halfM / (o.size / 2));
+    loadBambu().catch(() => {});                                     // warm it up for the download
     const [font, datas] = await Promise.all([loadFont(), Promise.all(plan.tiles.map(loadTile))]);
     if (token !== genToken) return;
     busy(T("building"));
@@ -377,8 +386,10 @@ function loop(ts) {
 }
 
 /* ---------------------------------------------------------------- download */
-function download() {
+async function download() {
   if (!result) return;
+  let project = null;
+  try { project = await loadBambu(); } catch (e) { console.warn("Bambu template unavailable, plain 3MF", e); }
   const m = ctx.m, o = result.opts;
   // colours may have changed since the mesh was built: re-derive one filament slot per distinct colour
   const cols = result.parts.map((p) => st.colors[p.key] || p.color), slots = extruderSlots(cols);
@@ -387,7 +398,7 @@ function download() {
     designer: "WeekendGo · 那我走",
     description: `${m.name.en} (${m.elevation_m} m). ${o.shape} ${o.size} mm, ${(o.halfKm * 2).toFixed(1)} km ground, `
       + `vertical ×${o.exag}. Terrain: AWS Terrain Tiles (SRTM et al.). Trails: © OpenStreetMap contributors (ODbL).`,
-  });
+  }, project);
   const blob = new Blob([bytes], { type: "model/3mf" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");

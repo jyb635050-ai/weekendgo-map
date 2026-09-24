@@ -76,6 +76,7 @@ async function tile({ z, x, y }) {
 const mts = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "mountains.json"), "utf8")).mountains;
 const todo = args.all ? mts : mts.filter((m) => ids.includes(m.id));
 if (!todo.length) { console.error("no mountains selected"); process.exit(2); }
+const bambu = JSON.parse(fs.readFileSync(path.join(ROOT, "data", "bambu", "a1_project.json"), "utf8"));
 const font = parseFont(fs.readFileSync(path.join(ROOT, "assets", "fonts", "Anton-Regular.ttf")));
 fs.mkdirSync(args.out, { recursive: true });
 
@@ -106,7 +107,7 @@ for (const m of todo) {
   const checks = res.parts.map((p) => ({ name: p.name, ...checkMesh(p) }));
   const bad = checks.filter((c) => c.openOrFlippedEdges || c.volumeMM3 <= 0);
   const file = path.join(args.out, `${m.id}-${args.shape}-${size}mm.3mf`);
-  const zip = build3MF(res.parts, { title: `${m.name.en} relief`, designer: "WeekendGo" });
+  const zip = build3MF(res.parts, { title: `${m.name.en} relief`, designer: "WeekendGo" }, bambu);
   fs.writeFileSync(file, zip);
   const st = res.stats;
   console.log(`${bad.length ? "FAIL" : "ok  "} ${m.id.padEnd(18)} z${plan.z}/${plan.tiles.length}t  ${st.sizeMM}x${st.sizeMM}x${st.heightMM}mm  1:${st.scale}`
