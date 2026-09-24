@@ -25,7 +25,12 @@ with sync_playwright() as p:
     pg.goto(url + ("&" if "?" in url else "?") + "nohero=1", wait_until="load")
     pg.wait_for_function("() => window.map && map.loaded && map.loaded()", timeout=90000)
     pg.click(f'.m-card[data-id="{mid}"]')
-    pg.wait_for_selector("#btn-print3d", timeout=30000)
+    try:
+        pg.wait_for_selector("#btn-print3d", state="attached", timeout=45000)
+    except Exception:
+        pg.screenshot(path=os.path.join(out, f"{mid}-nodetail.png"))
+        print("detail did not open:", pg.get_attribute("#detail", "class"), "| errors:", errors[:5])
+        raise
     pg.wait_for_timeout(2500)
     pg.click("#btn-print3d")
     pg.wait_for_selector(".p3-modal:not([hidden])", timeout=30000)

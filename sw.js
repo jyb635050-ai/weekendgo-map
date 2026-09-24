@@ -1,6 +1,6 @@
 /* WeekendGo service worker — offline tile & asset caching */
 const TILES = "wg-tiles-v2";
-const APP = "wg-app-v7";
+const APP = "wg-app-v8";
 const DATA = "wg-data-v4";
 const ALL = [TILES, APP, DATA];
 // NOTE: cdn.jsdelivr.net is intentionally NOT cached here — the MapLibre
@@ -89,11 +89,13 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // app shell: network-first (revalidated past the 10-min HTTP cache), cache only when offline.
-  // Stale-while-revalidate showed returning visitors the previous release after every deploy.
+  // app shell: network-first, cache only when offline (stale-while-revalidate showed returning
+  // visitors the previous release after every deploy). Pass the request through untouched:
+  // re-issuing it with a RequestInit (e.g. {cache:"no-cache"}) broke navigations and the
+  // lazily imported 3D-print module in Chrome.
   e.respondWith(
     caches.open(APP).then((c) =>
-      fetch(req, { cache: "no-cache" })
+      fetch(req)
         .then((res) => {
           if (res && res.status === 200) c.put(req, res.clone());
           return res;
