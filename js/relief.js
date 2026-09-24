@@ -8,9 +8,10 @@
    heightAt(eastMetres, northMetres) around the summit.
 
    Parts (each a closed, outward-wound triangle mesh, one colour):
-     terrain — the relief with walls down to a flat bottom; the band
-               between z=0 and the lowest ground is the plinth
-     label   — the English name, raised on the south (front) wall
+     base    — flat plinth, z = 0 .. baseMM
+     terrain — the relief, standing on the plinth (at least 0.6 mm thick)
+     label   — English name raised on the plinth's south (front) wall and
+               the summit elevation on its north (back) wall
      trail   — optional hiking route draped on the surface
    Parts only touch (never interpenetrate), so a single-colour print
    is one solid and an AMS print gets clean colour boundaries.
@@ -117,7 +118,7 @@ class MeshBuf {
 }
 
 /* ---------------------------------------------------------------- terrain body */
-function terrainSquare(zAt, S, cell) {
+function terrainSquare(zAt, S, cell, zb) {
   const N = Math.max(8, Math.round(S / cell)), h = S / 2, st = S / N;
   const mb = new MeshBuf();
   const top = new Int32Array((N + 1) * (N + 1));
@@ -129,8 +130,8 @@ function terrainSquare(zAt, S, cell) {
   for (let j = 0; j < N; j++) for (let i = 0; i < N; i++) {
     // split each cell along the diagonal that follows the terrain better
     const a = T(i, j), b = T(i + 1, j), c = T(i + 1, j + 1), d = T(i, j + 1);
-    const za = mb.v[a * 3 + 2], zb = mb.v[b * 3 + 2], zc = mb.v[c * 3 + 2], zd = mb.v[d * 3 + 2];
-    if (Math.abs(za - zc) <= Math.abs(zb - zd)) { mb.tri(a, b, c); mb.tri(a, c, d); }
+    const za = mb.v[a * 3 + 2], zB = mb.v[b * 3 + 2], zc = mb.v[c * 3 + 2], zd = mb.v[d * 3 + 2];
+    if (Math.abs(za - zc) <= Math.abs(zB - zd)) { mb.tri(a, b, c); mb.tri(a, c, d); }
     else { mb.tri(a, b, d); mb.tri(b, c, d); }
   }
   // boundary loop, counter-clockwise from above
@@ -139,11 +140,11 @@ function terrainSquare(zAt, S, cell) {
   for (let j = 0; j < N; j++) loop.push(T(N, j));
   for (let i = N; i > 0; i--) loop.push(T(i, N));
   for (let j = N; j > 0; j--) loop.push(T(0, j));
-  closeBottom(mb, loop);
+  closeBottom(mb, loop, zb);
   return mb;
 }
 
-function terrainRound(zAt, R, cell) {
+function terrainRound(zAt, R, cell, zb) {
   const K = Math.max(6, Math.round(R / cell));
   const M = Math.max(64, Math.round(2 * Math.PI * R / cell / 4) * 4);
   const mb = new MeshBuf();
@@ -165,20 +166,20 @@ function terrainRound(zAt, R, cell) {
       mb.tri(A[j], B[j], B[j1]); mb.tri(A[j], B[j1], A[j1]);
     }
   }
-  closeBottom(mb, Array.from(rings[K - 1]));
+  closeBottom(mb, Array.from(rings[K - 1]), zb);
   return mb;
 }
 
-/* walls from a CCW top boundary loop straight down to z=0, then a flat bottom (fan) */
-function closeBottom(mb, loop) {
+/* walls from a CCW top boundary loop straight down to z=zb, then a flat bottom (fan) */
+function closeBottom(mb, loop, zb = 0) {
   const n = loop.length, bot = new Int32Array(n);
   let cx = 0, cy = 0;
   for (let i = 0; i < n; i++) {
     const v = loop[i] * 3;
-    bot[i] = mb.add(mb.v[v], mb.v[v + 1], 0);
+    bot[i] = mb.add(mb.v[v], mb.v[v + 1], zb);
     cx += mb.v[v]; cy += mb.v[v + 1];
   }
-  const c = mb.add(cx / n, cy / n, 0);
+  const c = mb.add(cx / n, cy / n, zb);
   for (let i = 0; i < n; i++) {
     const i1 = (i + 1) % n, a = loop[i] * 3, b = loop[i1] * 3;
     const ex = mb.v[b] - mb.v[a], ey = mb.v[b + 1] - mb.v[a + 1];
@@ -186,6 +187,27 @@ function closeBottom(mb, loop) {
     mb.quad(bot[i], bot[i1], loop[i1], loop[i], out);
     mb.face(c, bot[i1], bot[i], [0, 0, -1]);
   }
+}
+
+/* ---------------------------------------------------------------- plinth
+   a flat-topped slab under the terrain body (its own part so it can take its own colour);
+   the round one uses the same sector count as the terrain's outer ring so the edges line up */
+function plinth(shape, half, h, cell) {
+  const mb = new MeshBuf();
+  let loop = [];
+  if (shape === "square") {
+    loop = [[-half, -half], [half, -half], [half, half], [-half, half]].map(([x, y]) => mb.add(x, y, h));
+  } else {
+    const M = Math.max(64, Math.round(2 * Math.PI * half / cell / 4) * 4);
+    for (let j = 0; j < M; j++) {
+      const a = 2 * Math.PI * j / M;
+      loop.push(mb.add(half * Math.cos(a), half * Math.sin(a), h));
+    }
+  }
+  const c = mb.add(0, 0, h);
+  for (let i = 0; i < loop.length; i++) mb.tri(c, loop[i], loop[(i + 1) % loop.length]);   // top, CCW from above
+  closeBottom(mb, loop, 0);
+  return mb;
 }
 
 /* ---------------------------------------------------------------- label text */
@@ -261,8 +283,7 @@ function shapesOf(rings) {
 }
 
 /* extrude label shapes (u right, v up, w out of the wall) and map them onto the wall */
-function labelMesh(shapes, depth, map) {
-  const mb = new MeshBuf();
+function labelMesh(shapes, depth, map, mb = new MeshBuf()) {
   for (const { outer, holes } of shapes) {
     const rings = [outer, ...holes];
     const flat = rings.flat();
@@ -370,9 +391,10 @@ export function buildRelief(o) {
   const shape = o.shape === "square" ? "square" : "round";
   const size = o.sizeMM || 120, half = size / 2;
   const s = half / o.halfM;                                        // mm per metre (horizontal)
-  const exag = o.exag || 1.5, base = o.baseMM || 10, cell = o.cellMM || 0.5;
+  const exag = o.exag || 1.5, base = Math.max(3, o.baseMM || 6), cell = o.cellMM || 0.5;
+  const SKIN = 0.6;                                                // terrain body's thinnest point
   const center = o.center || [128, 128];
-  const colors = { terrain: "#7E8F6A", label: "#F5F5F0", trail: "#F97316", ...(o.colors || {}) };
+  const colors = { base: "#1F1F22", terrain: "#E8E4DA", label: "#D4A017", trail: "#F97316", ...(o.colors || {}) };
 
   // sample ground once on a fine grid shared by both shapes, then interpolate
   const G = Math.max(64, Math.ceil(size / cell) + 1), gs = size / (G - 1);
@@ -395,45 +417,49 @@ export function buildRelief(o) {
     return H[j * G + i] * (1 - dx) * (1 - dy) + H[j * G + i + 1] * dx * (1 - dy)
       + H[(j + 1) * G + i] * (1 - dx) * dy + H[(j + 1) * G + i + 1] * dx * dy;
   };
-  const zAt = (x, y) => base + Math.max(0, hAt(x, y) - hmin) * zs;
+  const zAt = (x, y) => base + SKIN + Math.max(0, hAt(x, y) - hmin) * zs;
 
-  const parts = [];
-  const body = shape === "square" ? terrainSquare(zAt, size, cell) : terrainRound(zAt, half, cell);
-  parts.push(body.part("Terrain", colors.terrain, 1, center));
+  // [name, colour key, mesh]; filament slots are handed out per distinct colour below
+  const raw = [];
+  raw.push(["Base", "base", plinth(shape, half, base, cell)]);
+  raw.push(["Terrain", "terrain", shape === "square" ? terrainSquare(zAt, size, cell, base) : terrainRound(zAt, half, cell, base)]);
 
-  // ---- label on the south wall
+  // ---- text on the plinth: name on the south (front) wall, elevation on the north (back) wall
   const warnings = [];
-  const text = (o.label || "").trim();
-  let labelInfo = null;
-  if (text && o.font) {
+  const labels = {};
+  const textMesh = new MeshBuf();
+  const place = (text, side) => {
+    text = (text || "").trim();
+    if (!text || !o.font) return;
     const font = o.font;
     const capRatio = ((font.tables.os2 && font.tables.os2.sCapHeight) || font.unitsPerEm * 0.7) / font.unitsPerEm;
-    const band = base;                                             // wall height free of terrain
-    let cap = Math.min(7, Math.max(3, band * 0.55));
+    let cap = Math.max(2.2, Math.min(8, base - 1.6, base * 0.62));
     const maxW = shape === "square" ? size * 0.86 : Math.min(size * 0.86, half * 1.75);
     let fs = cap / capRatio;
     const w = font.getAdvanceWidth(text, fs);
     if (w > maxW) { fs *= maxW / w; cap = fs * capRatio; }
-    if (cap < 2.6) warnings.push("label-small");
+    if (cap < 3) warnings.push("label-small");
     const tw = font.getAdvanceWidth(text, fs);
-    const glyphs = glyphRings(font, text, fs);
-    const baseline = (band - cap) / 2;
+    const baseline = (base - cap) / 2;
     const shapes = [];
-    for (const g of glyphs) for (const sh of shapesOf(g)) {
+    for (const g of glyphRings(font, text, fs)) for (const sh of shapesOf(g)) {
       const mv = (p) => [p[0] - tw / 2, p[1] + baseline];
       shapes.push({ outer: sh.outer.map(mv), holes: sh.holes.map((h) => h.map(mv)) });
     }
-    const depth = 0.8;
+    const back = side === "back";
+    // (u right as the reader sees it, v up, w out of the wall) -> model space
     const map = shape === "square"
-      ? (u, v, w) => [u, -half - w, v]
+      ? (back ? (u, v, w) => [-u, half + w, v] : (u, v, w) => [u, -half - w, v])
       : (u, v, w) => {
-        const a = -Math.PI / 2 + u / half, r = half + w;
+        const a = (back ? Math.PI / 2 : -Math.PI / 2) + u / half, r = half + w;
         return [r * Math.cos(a), r * Math.sin(a), v];
       };
-    const lm = labelMesh(shapes, depth, map);
-    if (lm.t.length) parts.push(lm.part("Label", colors.label, 2, center));
-    labelInfo = { capMM: +cap.toFixed(1), widthMM: +tw.toFixed(1) };
-  }
+    labelMesh(shapes, 0.8, map, textMesh);
+    labels[side] = { capMM: +cap.toFixed(1), widthMM: +tw.toFixed(1) };
+  };
+  place(o.label, "front");
+  place(o.labelBack, "back");
+  if (textMesh.t.length) raw.push(["Label", "label", textMesh]);
 
   // ---- trail ribbons
   if (o.trails && o.trails.length) {
@@ -447,22 +473,35 @@ export function buildRelief(o) {
       paths.push(...clipResample(mm, inside, Math.max(0.4, cell)));
     }
     const rb = ribbonMesh(paths, zAt, o.trailWidthMM || 1.2, 0.8, 0.3);
-    if (rb.t.length) parts.push(rb.part("Trail", colors.trail, 3, center));
+    if (rb.t.length) raw.push(["Trail", "trail", rb]);
   }
 
-  const top = base + (hmax - hmin) * zs + (o.trails && o.trails.length ? 0.8 : 0);
+  const slot = extruderSlots(raw.map(([, k]) => colors[k]));
+  const parts = raw.map(([name, k, mb], i) => ({ ...mb.part(name, colors[k], slot[i], center), key: k }));
+  const top = base + SKIN + (hmax - hmin) * zs + (raw.some(([n]) => n === "Trail") ? 0.8 : 0);
   return {
     parts,
-    warnings,
+    warnings: [...new Set(warnings)],
     stats: {
       shape, sizeMM: size, heightMM: +top.toFixed(1), exag, baseMM: base,
       scale: Math.round(1000 / s),                                  // 1 : n
       groundKm: +(o.halfM * 2 / 1000).toFixed(1),
       hmin: Math.round(hmin), hmax: Math.round(hmax),
       tris: parts.reduce((n, p) => n + p.triVerts.length / 3, 0),
-      label: labelInfo,
+      labels,
     },
   };
+}
+
+/* one filament slot per distinct colour, numbered in part order (same colour -> same slot) */
+export function extruderSlots(colors) {
+  const seen = [];
+  return colors.map((c) => {
+    const k = String(c).toUpperCase();
+    let i = seen.indexOf(k);
+    if (i < 0) { seen.push(k); i = seen.length - 1; }
+    return i + 1;
+  });
 }
 
 /* ---------------------------------------------------------------- 3MF

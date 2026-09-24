@@ -983,3 +983,18 @@ body.modal-open { overflow: hidden; }
   .p3-stage { min-height: 260px; }
   .p3-form { border-left: 0; overflow: visible; }
 }
+.p3-tog { display: flex; align-items: center; gap: 8px; margin: 2px 0 6px; font-size: 12.5px; color: var(--text-2); cursor: pointer; }
+.p3-tog input { width: 15px; height: 15px; accent-color: var(--primary); margin: 0; }
+.p3-text + .p3-tog { margin-top: 10px; }
+.p3-text[hidden] { display: none; }
+.p3-custom {
+  position: relative; width: 20px; height: 20px; border-radius: 50%; cursor: pointer; overflow: hidden;
+  background: conic-gradient(#ef4444, #f59e0b, #eab308, #22c55e, #06b6d4, #3b82f6, #a855f7, #ef4444);
+  border: 2px solid transparent; box-shadow: 0 0 0 1px var(--glass-border) inset;
+}
+.p3-custom::after { content: ""; position: absolute; inset: 3px; border-radius: 50%; background: var(--c, transparent); }
+.p3-custom.on { border-color: var(--primary); }
+.p3-custom input { position: absolute; inset: 0; opacity: 0; width: 100%; height: 100%; cursor: pointer; border: 0; padding: 0; }
+.p3-sw { flex-wrap: nowrap; gap: 4px; }
+.p3-sw button, .p3-custom { width: 18px; height: 18px; flex-shrink: 0; }
+.p3-cname { width: 34px; }

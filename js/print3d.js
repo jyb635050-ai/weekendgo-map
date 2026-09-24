@@ -4,7 +4,7 @@
    app.js calls openPrint3d(ctx) with { m, routes, active, hasTrail, t, loc, toast }.
    ============================================================ */
 import * as THREE from "../vendor/three/three.module.js";
-import { planTiles, demSampler, defaultHalfM, toLocal, buildRelief, build3MF, parseFont, DEM_URL } from "./relief.js";
+import { planTiles, demSampler, defaultHalfM, toLocal, buildRelief, build3MF, extruderSlots, parseFont, DEM_URL } from "./relief.js";
 
 const SIZES = [80, 100, 120, 150, 180];
 const FILAMENTS = [
@@ -12,7 +12,7 @@ const FILAMENTS = [
   { id: "forest", hex: "#3F6B3A" }, { id: "sand", hex: "#B08A5E" }, { id: "orange", hex: "#F97316" },
   { id: "red", hex: "#DC2626" }, { id: "blue", hex: "#2563EB" }, { id: "gold", hex: "#D4A017" },
 ];
-const PARTS = ["terrain", "label", "trail"];
+const PARTS = ["base", "terrain", "label", "trail"];
 
 let ctx = null;          // current open context from app.js
 let st = null;           // current options
@@ -119,15 +119,18 @@ function buildDialog() {
           <div class="p3-field"><div class="p3-lbl"><span data-t="exag"></span><b data-out="exag"></b></div>
             <input type="range" data-k="exag" min="1" max="3" step="0.1"></div>
           <div class="p3-field"><div class="p3-lbl"><span data-t="base"></span><b data-out="base"></b></div>
-            <input type="range" data-k="base" min="8" max="20" step="1"></div>
-          <div class="p3-field"><div class="p3-lbl" data-t="label"></div>
-            <input type="text" class="p3-text" data-k="label" maxlength="36" spellcheck="false" autocomplete="off"></div>
+            <input type="range" data-k="base" min="5" max="20" step="1"></div>
+          <div class="p3-field"><div class="p3-lbl" data-t="texts"></div>
+            <label class="p3-tog"><input type="checkbox" data-k="showName"><span data-t="nameFront"></span></label>
+            <input type="text" class="p3-text" data-k="label" maxlength="36" spellcheck="false" autocomplete="off">
+            <label class="p3-tog"><input type="checkbox" data-k="showElev"><span data-t="elevBack"></span></label>
+            <input type="text" class="p3-text" data-k="labelBack" maxlength="36" spellcheck="false" autocomplete="off"></div>
           <div class="p3-field p3-trail-field"><div class="p3-lbl" data-t="trail"></div>
             <div class="p3-seg" data-k="trail"><button data-v="none" data-t="trailNone"></button><button data-v="active" data-t="trailActive"></button><button data-v="all" data-t="trailAll"></button></div></div>
           <div class="p3-field"><div class="p3-lbl" data-t="colors"></div>
             <div class="p3-colors">${PARTS.map((p) => `
               <div class="p3-crow" data-part="${p}"><span class="p3-cname" data-t="part.${p}"></span>
-                <div class="p3-sw">${FILAMENTS.map((f) => `<button data-c="${f.hex}" style="--c:${f.hex}" data-tt="fil.${f.id}"></button>`).join("")}</div></div>`).join("")}
+                <div class="p3-sw">${FILAMENTS.map((f) => `<button data-c="${f.hex}" style="--c:${f.hex}" data-tt="fil.${f.id}"></button>`).join("")}<label class="p3-custom" data-tt="custom"><input type="color"></label></div></div>`).join("")}
             </div></div>
           <div class="p3-stats"></div>
           <button class="d-btn d-btn-primary p3-dl" disabled>
@@ -160,8 +163,12 @@ function buildDialog() {
     st[inp.dataset.k] = +inp.value;
     sync(); schedule(inp.dataset.k === "halfKm" ? 350 : 180);
   }));
-  const txt = el.querySelector(".p3-text");
-  txt.addEventListener("input", () => { st.label = txt.value; schedule(350); });
+  el.querySelectorAll(".p3-text").forEach((inp) => inp.addEventListener("input", () => { st[inp.dataset.k] = inp.value; schedule(350); }));
+  el.querySelectorAll(".p3-tog input").forEach((cb) => cb.addEventListener("change", () => { st[cb.dataset.k] = cb.checked; sync(); schedule(0); }));
+  el.querySelectorAll(".p3-custom input").forEach((inp) => inp.addEventListener("input", () => {
+    st.colors[inp.closest(".p3-crow").dataset.part] = inp.value.toUpperCase();
+    sync(); recolor();
+  }));
   el.querySelector(".p3-dl").addEventListener("click", download);
   document.addEventListener("keydown", (e) => { if (e.key === "Escape" && el && !el.hidden) close(); });
   document.addEventListener("wg:langchange", () => { if (el && !el.hidden) { texts(); sync(); if (result) stats(result); } });
@@ -184,11 +191,21 @@ function sync() {
   el.querySelector('[data-out="halfKm"]').textContent = `${(st.halfKm * 2).toFixed(1)} km`;
   el.querySelector('[data-out="exag"]').textContent = `${st.exag.toFixed(1)}×`;
   el.querySelector('[data-out="base"]').textContent = `${st.base} mm`;
-  const txt = el.querySelector(".p3-text");
-  if (txt.value !== st.label) txt.value = st.label;
-  el.querySelectorAll(".p3-crow").forEach((row) => {
-    row.querySelectorAll("button").forEach((b) => b.classList.toggle("on", b.dataset.c === st.colors[row.dataset.part]));
+  el.querySelectorAll(".p3-text").forEach((inp) => {
+    if (inp.value !== st[inp.dataset.k]) inp.value = st[inp.dataset.k];
+    inp.hidden = !st[inp.dataset.k === "label" ? "showName" : "showElev"];
   });
+  el.querySelectorAll(".p3-tog input").forEach((cb) => { cb.checked = !!st[cb.dataset.k]; });
+  el.querySelectorAll(".p3-crow").forEach((row) => {
+    const c = String(st.colors[row.dataset.part]).toUpperCase();
+    let preset = false;
+    row.querySelectorAll("button").forEach((b) => { const on = b.dataset.c.toUpperCase() === c; b.classList.toggle("on", on); preset = preset || on; });
+    const cu = row.querySelector(".p3-custom");
+    cu.classList.toggle("on", !preset);
+    cu.style.setProperty("--c", preset ? "transparent" : c);
+    cu.querySelector("input").value = c.slice(0, 7).toLowerCase();
+  });
+  el.querySelector('.p3-crow[data-part="label"]').hidden = !st.showName && !st.showElev;
   const hasRoutes = (ctx.routes || []).length > 0;
   el.querySelector(".p3-trail-field").hidden = !hasRoutes;
   el.querySelector('.p3-crow[data-part="trail"]').hidden = !hasRoutes || st.trail === "none";
@@ -226,7 +243,8 @@ async function generate() {
     const pick = o.trail === "all" ? routes : o.trail === "active" && routes[ctx.active] ? [routes[ctx.active]] : [];
     result = buildRelief({
       heightAt: demSampler(plan.z, tmap, lng0, lat0), halfM, shape: o.shape, sizeMM: o.size,
-      exag: o.exag, baseMM: o.base, cellMM: cell, label: o.label, font,
+      exag: o.exag, baseMM: o.base, cellMM: cell, font,
+      label: o.showName ? o.label : "", labelBack: o.showElev ? o.labelBack : "",
       trails: pick.map((r) => r.line.map(([lng, lat]) => toLocal(lng, lat, lng0, lat0))),
       colors: o.colors,
     });
@@ -314,7 +332,7 @@ function showModel(res) {
     g.setIndex(new THREE.BufferAttribute(p.triVerts, 1));
     const mat = new THREE.MeshStandardMaterial({ color: p.color, roughness: 0.82, metalness: 0.0, flatShading: true });
     const me = new THREE.Mesh(g, mat);
-    me.userData.part = p.name.toLowerCase();
+    me.userData.part = p.key;
     group.add(me);
     meshes.push(me);
   }
@@ -332,7 +350,7 @@ function recolor() {
     const c = st.colors[me.userData.part];
     if (c) me.material.color.set(c);
   }
-  if (result) for (const p of result.parts) { const c = st.colors[p.name.toLowerCase()]; if (c) p.color = c; }
+  if (result) for (const p of result.parts) { const c = st.colors[p.key]; if (c) p.color = c; }
   view.dirty = true;
 }
 
@@ -362,7 +380,9 @@ function loop(ts) {
 function download() {
   if (!result) return;
   const m = ctx.m, o = result.opts;
-  const bytes = build3MF(result.parts.map((p) => ({ ...p, color: st.colors[p.name.toLowerCase()] || p.color })), {
+  // colours may have changed since the mesh was built: re-derive one filament slot per distinct colour
+  const cols = result.parts.map((p) => st.colors[p.key] || p.color), slots = extruderSlots(cols);
+  const bytes = build3MF(result.parts.map((p, i) => ({ ...p, color: cols[i], extruder: slots[i] })), {
     title: `${m.name.en} — WeekendGo relief`,
     designer: "WeekendGo · 那我走",
     description: `${m.name.en} (${m.elevation_m} m). ${o.shape} ${o.size} mm, ${(o.halfKm * 2).toFixed(1)} km ground, `
@@ -396,11 +416,12 @@ export async function openPrint3d(c) {
   const routes = await loadRoutes().catch(() => []);
   const prev = st && st.id === c.m.id ? st : null;
   st = prev || {
-    id: c.m.id, shape: "round", size: 120, exag: 1.5, base: 12,
+    id: c.m.id, shape: "round", size: 120, exag: 1.5, base: 6,
     halfKm: defaultHalfKm(routes, ctx.active || 0),
-    label: c.m.name.en.toUpperCase(),
+    showName: true, label: c.m.name.en.toUpperCase(),
+    showElev: true, labelBack: `${Number(c.m.elevation_m).toLocaleString("en-US")} M`,
     trail: routes.length ? "active" : "none",
-    colors: { terrain: "#E8E4DA", label: "#1F1F22", trail: "#F97316" },
+    colors: { base: "#1F1F22", terrain: "#E8E4DA", label: "#D4A017", trail: "#F97316" },
   };
   if (!prev) { result = null; view.sized = false; view.auto = true; view.az = -0.55; view.el = 0.62; }
   texts();

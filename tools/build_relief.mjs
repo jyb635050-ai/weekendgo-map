@@ -17,7 +17,7 @@ import { planTiles, demSampler, defaultHalfM, toLocal, buildRelief, build3MF, ch
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const CACHE = path.join(ROOT, "tools", ".cache", "dem");
-const KNOWN = ["shape", "size", "exag", "base", "trail", "out", "all", "cell"];
+const KNOWN = ["shape", "size", "exag", "base", "trail", "out", "all", "cell", "no-name", "no-elev"];
 const args = { shape: "round", size: "120", trail: "main", out: path.join(ROOT, "out", "relief") };
 const ids = [];
 for (const a of process.argv.slice(2)) {
@@ -98,8 +98,10 @@ for (const m of todo) {
   const t0 = Date.now();
   const res = buildRelief({
     heightAt: demSampler(plan.z, tiles, lng0, lat0), halfM, shape: args.shape, sizeMM: size,
-    exag: +(args.exag || 1.5), baseMM: +(args.base || 10), cellMM: cell,
-    label: m.name.en.toUpperCase(), font, trails,
+    exag: +(args.exag || 1.5), baseMM: +(args.base || 6), cellMM: cell,
+    label: args["no-name"] ? "" : m.name.en.toUpperCase(),
+    labelBack: args["no-elev"] ? "" : `${m.elevation_m.toLocaleString("en-US")} M`, font, trails,
+    colors: { base: "#1F1F22", terrain: "#E8E4DA", label: "#D4A017", trail: "#F97316" },
   });
   const checks = res.parts.map((p) => ({ name: p.name, ...checkMesh(p) }));
   const bad = checks.filter((c) => c.openOrFlippedEdges || c.volumeMM3 <= 0);
@@ -108,7 +110,7 @@ for (const m of todo) {
   fs.writeFileSync(file, zip);
   const st = res.stats;
   console.log(`${bad.length ? "FAIL" : "ok  "} ${m.id.padEnd(18)} z${plan.z}/${plan.tiles.length}t  ${st.sizeMM}x${st.sizeMM}x${st.heightMM}mm  1:${st.scale}`
-    + `  ${st.tris} tris  ${(zip.length / 1e6).toFixed(1)} MB  label ${st.label ? st.label.capMM + "mm" : "-"}`
+    + `  ${st.tris} tris  ${(zip.length / 1e6).toFixed(1)} MB  text ${Object.entries(st.labels).map(([k, v]) => k + " " + v.capMM + "mm").join(", ") || "-"}`
     + `  parts ${checks.map((c) => `${c.name}(${c.openOrFlippedEdges}/${c.volumeMM3})`).join(" ")}  ${Date.now() - t0} ms`
     + (res.warnings.length ? "  WARN " + res.warnings.join(",") : ""));
   if (bad.length) failed++;

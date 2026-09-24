@@ -12,8 +12,9 @@ Philippines National Hiking Map — 69 mountains across Luzon, Visayas, Mindanao
   data freshness date ("OSM 更新于 …", flagged when older than 5 years) and **GPX download**
 - 📖 Guides per mountain: elevation, difficulty, trail class, time to summit, jump-off, tips, best season, sources, photos, 3-day summit weather
 - 🖨️ **3D-print keepsake** — any mountain as a printable relief (real terrain, round or square, 80–180 mm, adjustable area /
-  vertical exaggeration / base), its English name raised on the base and the hiking route raised on the surface;
-  exports a multi-part **3MF** (terrain / text / route → one filament each in Bambu Studio / OrcaSlicer)
+  vertical exaggeration / base ≥ 5 mm), English name on the front of the base and the summit elevation on the back,
+  hiking route raised on the surface (each optional); custom colours for base / terrain / text / route;
+  exports a multi-part **3MF** (same colour → same filament slot in Bambu Studio / OrcaSlicer)
 - ⭐ Personal "want to go / climbed" marks, 🌐 中文 / English, 🌙 dark / light, PWA offline cache
 - 🔗 Deep links: `?m=pulag` opens a mountain directly; `?nohero=1` skips the intro
 
