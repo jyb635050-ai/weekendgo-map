@@ -548,6 +548,12 @@ function renderDetail(m) {
     ${m.tips ? `<div class="d-section"><h3>${esc(t("d.tips"))}</h3><p>${esc(loc(m.tips))}</p></div>` : ""}
     ${sources ? `<div class="d-section"><h3>${esc(t("d.sources"))}</h3><div class="d-links">${sources}</div></div>` : ""}
 
+    <button class="d-print" id="btn-print3d">
+      <span class="d-print-ico"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="m2.5 17.5 6-9 3.5 5 2.5-3.5 7 7.5"/><path d="M2.5 17.5h19v2.5h-19z"/><path d="m8.5 8.5 1.6 2.3"/></svg></span>
+      <span class="d-print-txt"><b>${esc(t("p3.cta"))}</b><small>${esc(t("p3.ctaSub"))}</small></span>
+      <svg class="d-print-go" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg>
+    </button>
+
     <div class="d-marks">
       <button class="d-mark want ${marks[m.id] === "want" ? "on" : ""}" data-mark="want" title="${esc(t("mark.deviceNote"))}">
         ${MARK_ICONS.want}<span>${esc(t("mark.want"))}</span>
@@ -585,6 +591,10 @@ function renderDetail(m) {
   // share this mountain
   const shareBtn = $("#btn-share");
   if (shareBtn) shareBtn.addEventListener("click", () => shareMountain(m));
+
+  // 3D-print relief model (module + three.js load only on first use)
+  const printBtn = $("#btn-print3d");
+  if (printBtn) printBtn.addEventListener("click", () => openPrint3d(m, printBtn));
 
   // want / done toggles
   document.querySelectorAll("#detail-body .d-mark").forEach((btn) => {
@@ -1021,6 +1031,24 @@ function flyToMountain(m) {
 }
 
 const SITE_URL = "https://jyb635050-ai.github.io/weekendgo-map/";
+let print3dMod = null;
+async function openPrint3d(m, btn) {
+  btn.classList.add("loading");
+  try {
+    print3dMod = print3dMod || await import(new URL("js/print3d.js", document.baseURI).href);
+    const tr = trailState && trailState.id === m.id ? trailState : null;
+    stopOrbit();
+    await print3dMod.openPrint3d({
+      m, routes: tr ? tr.routes : [], active: tr ? tr.active : 0, hasTrail: trailIds.has(m.id), t, loc, toast,
+    });
+  } catch (err) {
+    console.error(err);
+    toast(t("p3.loadFail"));
+  } finally {
+    btn.classList.remove("loading");
+  }
+}
+
 async function shareMountain(m) {
   const url = `${SITE_URL}?m=${encodeURIComponent(m.id)}`;
   const title = `${loc(m.name)} · WeekendGo`;

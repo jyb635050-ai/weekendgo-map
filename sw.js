@@ -1,6 +1,6 @@
 /* WeekendGo service worker — offline tile & asset caching */
 const TILES = "wg-tiles-v2";
-const APP = "wg-app-v4";
+const APP = "wg-app-v5";
 const DATA = "wg-data-v4";
 const ALL = [TILES, APP, DATA];
 // NOTE: cdn.jsdelivr.net is intentionally NOT cached here — the MapLibre

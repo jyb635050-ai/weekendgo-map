@@ -874,3 +874,112 @@ body.modal-open { overflow: hidden; }
   .aurora-blob { animation: none; }
   .mk-pulse { animation: none; opacity: 0; }
 }
+
+/* ============================================================
+   3D-print keepsake: detail-panel entry + dialog
+   ============================================================ */
+.d-print {
+  width: 100%; margin-top: 24px; padding: 13px 14px;
+  display: flex; align-items: center; gap: 12px; text-align: left;
+  border-radius: var(--radius-md); border: 1px solid var(--glass-border);
+  background: linear-gradient(120deg, rgba(251,146,60,.14), rgba(34,211,238,.08)), var(--surface-2);
+  transition: border-color var(--t-fast), transform var(--t-fast);
+}
+.d-print:hover { border-color: var(--ring); transform: translateY(-1px); }
+.d-print:active { transform: scale(.985); }
+.d-print-ico {
+  width: 40px; height: 40px; flex-shrink: 0; border-radius: 12px;
+  display: grid; place-items: center; color: var(--primary);
+  background: rgba(251,146,60,.14); border: 1px solid rgba(251,146,60,.28);
+}
+.d-print-ico svg { width: 22px; height: 22px; }
+.d-print-txt { flex: 1; display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.d-print-txt b { font-size: 14.5px; font-weight: 800; }
+.d-print-txt small { font-size: 12px; color: var(--text-3); }
+.d-print-go { width: 18px; height: 18px; color: var(--text-3); flex-shrink: 0; }
+.d-print.loading { pointer-events: none; opacity: .75; }
+.d-print.loading .d-print-go { animation: p3spin .8s linear infinite; }
+
+.p3-modal { position: fixed; inset: 0; z-index: 200; display: grid; place-items: center; }
+.p3-modal[hidden] { display: none; }
+.p3-scrim { position: absolute; inset: 0; background: var(--scrim); -webkit-backdrop-filter: blur(4px); backdrop-filter: blur(4px); }
+.p3-card {
+  position: relative; width: min(1060px, calc(100vw - 32px)); max-height: calc(100vh - 32px);
+  display: flex; flex-direction: column; border-radius: var(--radius-lg); overflow: hidden;
+  background: var(--surface-solid);
+  animation: pop var(--t-med) var(--ease-spring);
+}
+.p3-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; padding: 18px 20px 10px; }
+.p3-kicker { font-size: 11.5px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--primary); }
+.p3-head h2 { margin: 4px 0 0; font-size: 21px; font-weight: 800; line-height: 1.25; }
+.p3-head h2 small { font-size: 13px; font-weight: 600; color: var(--text-3); margin-left: 6px; }
+.p3-body { display: grid; grid-template-columns: minmax(0, 1fr) 330px; gap: 0; min-height: 0; flex: 1; }
+.p3-stage {
+  position: relative; min-height: 420px;
+  background: radial-gradient(ellipse at 50% 38%, rgba(148,163,184,.16), transparent 70%);
+  border-top: 1px solid var(--glass-border);
+}
+.p3-canvas { position: absolute; inset: 0; width: 100%; height: 100%; display: block; cursor: grab; touch-action: none; }
+.p3-canvas:active { cursor: grabbing; }
+.p3-busy {
+  position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%);
+  display: flex; align-items: center; gap: 10px; padding: 10px 16px; border-radius: 999px;
+  background: var(--surface); border: 1px solid var(--glass-border); font-size: 13px; color: var(--text-2);
+  box-shadow: var(--shadow-sm);
+}
+.p3-busy[hidden] { display: none; }
+.p3-spin { width: 16px; height: 16px; border-radius: 50%; border: 2px solid var(--glass-border); border-top-color: var(--primary); animation: p3spin .8s linear infinite; }
+@keyframes p3spin { to { transform: rotate(360deg); } }
+.p3-hint { position: absolute; left: 14px; bottom: 12px; font-size: 11.5px; color: var(--text-3); pointer-events: none; }
+.p3-form {
+  overflow-y: auto; padding: 14px 20px 20px; border-top: 1px solid var(--glass-border); border-left: 1px solid var(--glass-border);
+  display: flex; flex-direction: column; gap: 13px;
+}
+.p3-field[hidden] { display: none; }
+.p3-lbl { display: flex; justify-content: space-between; font-size: 12.5px; font-weight: 700; color: var(--text-2); margin-bottom: 6px; }
+.p3-lbl b { color: var(--text); font-variant-numeric: tabular-nums; }
+.p3-seg { display: flex; gap: 4px; padding: 3px; border-radius: 11px; background: var(--surface-2); border: 1px solid var(--glass-border); }
+.p3-seg button {
+  flex: 1; padding: 6px 4px; border-radius: 8px; font-size: 12.5px; font-weight: 700; color: var(--text-2);
+  transition: background var(--t-fast), color var(--t-fast);
+}
+.p3-seg button:hover { color: var(--text); }
+.p3-seg button.on { background: var(--primary); color: var(--on-primary, #fff); }
+.p3-form input[type=range] { width: 100%; accent-color: var(--primary); }
+.p3-text {
+  width: 100%; padding: 9px 11px; border-radius: 10px; font: 700 14px/1.2 var(--font-body); letter-spacing: .04em;
+  color: var(--text); background: var(--surface-2); border: 1px solid var(--glass-border); outline: none;
+}
+.p3-text:focus { border-color: var(--ring); }
+.p3-colors { display: flex; flex-direction: column; gap: 7px; }
+.p3-crow { display: flex; align-items: center; gap: 10px; }
+.p3-crow[hidden] { display: none; }
+.p3-cname { width: 40px; font-size: 12px; color: var(--text-3); flex-shrink: 0; }
+.p3-sw { display: flex; flex-wrap: wrap; gap: 5px; }
+.p3-sw button {
+  width: 20px; height: 20px; border-radius: 50%; background: var(--c);
+  border: 2px solid transparent; box-shadow: 0 0 0 1px var(--glass-border) inset;
+  transition: transform var(--t-fast);
+}
+.p3-sw button:hover { transform: scale(1.12); }
+.p3-sw button.on { border-color: var(--primary); box-shadow: 0 0 0 2px var(--surface-solid) inset; }
+.p3-stats {
+  display: grid; grid-template-columns: 1fr 1fr; gap: 6px 12px; padding: 10px 12px; border-radius: 12px;
+  background: var(--surface-2); border: 1px solid var(--glass-border); font-size: 12px;
+}
+.p3-stats:empty { display: none; }
+.p3-stats div { display: flex; flex-direction: column; gap: 1px; }
+.p3-stats span { color: var(--text-3); }
+.p3-stats b { font-variant-numeric: tabular-nums; }
+.p3-stats .p3-warn { grid-column: 1 / -1; color: var(--diff-mod); }
+.p3-dl { justify-content: center; padding: 12px; font-size: 14.5px; }
+.p3-dl:disabled { opacity: .5; pointer-events: none; }
+.p3-note, .p3-credit { margin: 0; font-size: 11.5px; line-height: 1.65; color: var(--text-3); }
+.p3-credit { opacity: .8; }
+
+@media (max-width: 860px) {
+  .p3-card { width: 100vw; max-height: 100dvh; height: 100dvh; border-radius: 0; }
+  .p3-body { grid-template-columns: 1fr; grid-template-rows: minmax(260px, 42vh) auto; overflow-y: auto; }
+  .p3-stage { min-height: 260px; }
+  .p3-form { border-left: 0; overflow: visible; }
+}
