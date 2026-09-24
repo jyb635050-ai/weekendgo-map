@@ -1,6 +1,6 @@
 /* WeekendGo service worker — offline tile & asset caching */
 const TILES = "wg-tiles-v2";
-const APP = "wg-app-v6";
+const APP = "wg-app-v7";
 const DATA = "wg-data-v4";
 const ALL = [TILES, APP, DATA];
 // NOTE: cdn.jsdelivr.net is intentionally NOT cached here — the MapLibre
@@ -89,17 +89,16 @@ self.addEventListener("fetch", (e) => {
     return;
   }
 
-  // app shell: stale-while-revalidate
+  // app shell: network-first (revalidated past the 10-min HTTP cache), cache only when offline.
+  // Stale-while-revalidate showed returning visitors the previous release after every deploy.
   e.respondWith(
-    caches.open(APP).then(async (c) => {
-      const hit = await c.match(req);
-      const refresh = fetch(req)
+    caches.open(APP).then((c) =>
+      fetch(req, { cache: "no-cache" })
         .then((res) => {
           if (res && res.status === 200) c.put(req, res.clone());
           return res;
         })
-        .catch(() => hit);
-      return hit || refresh;
-    })
+        .catch(() => c.match(req).then((hit) => hit || Promise.reject(new Error("offline"))))
+    )
   );
 });
