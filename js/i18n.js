@@ -139,6 +139,7 @@ const I18N = {
     "p3.failed": "地形数据加载失败，请检查网络后重试",
     "p3.saved": "3MF 已下载，用切片软件打开即可打印",
     "p3.loadFail": "3D 模块加载失败，请刷新页面重试",
+    "p3.loadingModule": "正在加载 3D 模块…",
 
     "join.btn": "加入我们",
     "join.title": "加入我们的徒步活动",
@@ -294,6 +295,7 @@ const I18N = {
     "p3.failed": "Couldn't load terrain data — check your connection and try again",
     "p3.saved": "3MF downloaded — open it in your slicer to print",
     "p3.loadFail": "Couldn't load the 3D module — please refresh and try again",
+    "p3.loadingModule": "Loading the 3D module…",
 
     "join.btn": "Join us",
     "join.title": "Join our weekend hikes",

@@ -594,7 +594,11 @@ function renderDetail(m) {
 
   // 3D-print relief model (module + three.js load only on first use)
   const printBtn = $("#btn-print3d");
-  if (printBtn) printBtn.addEventListener("click", () => openPrint3d(m, printBtn));
+  if (printBtn) {
+    printBtn.addEventListener("click", () => openPrint3d(m, printBtn));
+    printBtn.addEventListener("pointerenter", warmPrint3d, { once: true });
+    setTimeout(warmPrint3d, 2500);          // after the fly-in, fetch the 3D code in the background
+  }
 
   // want / done toggles
   document.querySelectorAll("#detail-body .d-mark").forEach((btn) => {
@@ -1032,8 +1036,27 @@ function flyToMountain(m) {
 
 const SITE_URL = "https://jyb635050-ai.github.io/weekendgo-map/";
 let print3dMod = null;
+let print3dWarm = false;
+/* the 3D dialog is six ES modules (~2.7 MB incl. three.js); fetched lazily they load one import level
+   at a time. modulepreload fetches the whole graph in parallel, ahead of the click. */
+function warmPrint3d() {
+  if (print3dWarm) return;
+  print3dWarm = true;
+  ["js/print3d.js", "js/relief.js", "vendor/three/three.module.js", "vendor/three/three.core.js",
+    "vendor/opentype.js", "vendor/fflate.js"].forEach((href) => {
+    const l = document.createElement("link");
+    l.rel = "modulepreload";
+    l.href = href;
+    document.head.appendChild(l);
+  });
+}
+
 async function openPrint3d(m, btn) {
+  warmPrint3d();
   btn.classList.add("loading");
+  const sub = btn.querySelector(".d-print-txt small");
+  const subText = sub ? sub.textContent : "";
+  if (sub && !print3dMod) sub.textContent = t("p3.loadingModule");
   try {
     print3dMod = print3dMod || await import(new URL("js/print3d.js", document.baseURI).href);
     const tr = trailState && trailState.id === m.id ? trailState : null;
@@ -1046,6 +1069,7 @@ async function openPrint3d(m, btn) {
     toast(t("p3.loadFail"));
   } finally {
     btn.classList.remove("loading");
+    if (sub) sub.textContent = subText;
   }
 }
 
