@@ -20,7 +20,7 @@ def open_page(b, **ctx):
     pg = c.new_page()
     errs = []
     pg.on("pageerror", lambda e: errs.append(str(e)))
-    pg.goto(page_url, wait_until="load")
+    pg.goto(page_url, wait_until="domcontentloaded", timeout=90000)
     pg.wait_for_function("() => window.map && map.loaded && map.loaded()", timeout=90000)
     return c, pg, errs
 

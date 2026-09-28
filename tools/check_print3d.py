@@ -22,7 +22,7 @@ with sync_playwright() as p:
     errors = []
     pg.on("pageerror", lambda e: errors.append(str(e)))
     pg.on("console", lambda m: m.type == "error" and errors.append(m.text))
-    pg.goto(url + ("&" if "?" in url else "?") + "nohero=1", wait_until="load")
+    pg.goto(url + ("&" if "?" in url else "?") + "nohero=1", wait_until="domcontentloaded", timeout=90000)
     pg.wait_for_function("() => window.map && map.loaded && map.loaded()", timeout=90000)
     pg.click(f'.m-card[data-id="{mid}"]')
     try:

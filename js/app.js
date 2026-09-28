@@ -655,6 +655,8 @@ function closeDetail() {
   stopOrbit();
   clearTrailLayers();
   if (userPos) drawLink(null);
+  const p = map.getPadding();
+  if (p.top || p.bottom || p.left || p.right) map.easeTo({ padding: NO_PADDING, duration: prefersReducedMotion ? 0 : 400 });
   highlightActiveCard();
 }
 
@@ -815,9 +817,21 @@ function styleActiveRoute(i, color) {
   map.setPaintProperty("trail-pos", "circle-stroke-color", color);
 }
 
+const isPhone = () => window.matchMedia("(max-width: 860px)").matches;
+function sheetPadding() {
+  // the sheet is bottom-anchored and slides in with a transform, so use its layout height
+  // (getBoundingClientRect would still report it off-screen mid-animation)
+  const h = $("#detail").offsetHeight || window.innerHeight * 0.64;
+  return { top: 70, bottom: Math.round(Math.min(h, window.innerHeight * 0.75)), left: 0, right: 0 };
+}
+const NO_PADDING = { top: 0, bottom: 0, left: 0, right: 0 };
+
 function routePadding() {
   if (window.matchMedia("(max-width: 860px)").matches) {
-    return { top: 90, bottom: Math.round(window.innerHeight * 0.64), left: 30, right: 30 };
+    // keep the framed routes (and the "N km from you" label above the summit) clear of the detail sheet;
+    // the tilted camera stretches the near edge, hence the extra margin
+    const d = $("#detail"), top = d.classList.contains("open") ? d.getBoundingClientRect().top : window.innerHeight * 0.36;
+    return { top: 100, bottom: Math.round(window.innerHeight - top + 90), left: 36, right: 36 };
   }
   const listOpen = !$("#list-drawer").classList.contains("closed");
   return { top: 110, bottom: 60, left: listOpen ? 390 : 70, right: 480 };
@@ -830,6 +844,12 @@ function fitRoutes(lines) {
   // cameraForBounds solves the fit top-down (and offsets the centre for the side panels);
   // a tilted 3D camera magnifies the near edge, so back off a little zoom to keep it all in view
   const pitch = Math.min(map.getPitch(), 58);
+  if (isPhone()) {
+    // with the sheet as viewport padding, fit the routes into the visible band above it
+    map.fitBounds(b, { padding: { top: 30, bottom: 30, left: 36, right: 36 }, pitch, bearing: map.getBearing(),
+      maxZoom: 14, duration: prefersReducedMotion ? 0 : 1400, essential: true });
+    return;
+  }
   const cam = map.cameraForBounds(b, { padding: routePadding(), bearing: map.getBearing() });
   if (!cam) return;
   map.flyTo({
@@ -1103,7 +1123,7 @@ function fitNearby(near) {
   const cam = map.cameraForBounds(b, { padding, bearing: 0 });
   if (!cam) return;
   stopOrbit();
-  map.flyTo({ center: cam.center, zoom: Math.min(11.5, cam.zoom - 0.3), pitch: 35, bearing: 0,
+  map.flyTo({ center: cam.center, zoom: Math.min(11.5, cam.zoom - 0.3), pitch: 35, bearing: 0, padding: NO_PADDING,
     duration: prefersReducedMotion ? 0 : 2000, essential: true });
 }
 
@@ -1144,6 +1164,8 @@ function flyToMountain(m) {
     zoom: SELECT_VIEW.zoom,
     pitch: SELECT_VIEW.pitch,
     bearing: (map.getBearing() + 30) % 360,
+    // phones: the detail sheet covers the lower ~60% — put the summit in the visible upper part
+    padding: isPhone() ? sheetPadding() : NO_PADDING,
     duration: prefersReducedMotion ? 0 : 2200,
     curve: 1.32,
     essential: true,
@@ -1329,7 +1351,7 @@ function bindUI() {
   $("#btn-locate").addEventListener("click", locateMe);
   $("#btn-home-view").addEventListener("click", () => {
     closeDetail();
-    map.flyTo({ ...HOME_VIEW, duration: prefersReducedMotion ? 0 : 2600, essential: true });
+    map.flyTo({ ...HOME_VIEW, padding: NO_PADDING, duration: prefersReducedMotion ? 0 : 2600, essential: true });
   });
   const brandHome = $("#brand-home");
   brandHome.addEventListener("click", () => $("#btn-home-view").click());
