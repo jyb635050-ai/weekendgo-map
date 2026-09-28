@@ -998,3 +998,25 @@ body.modal-open { overflow: hidden; }
 .p3-sw { flex-wrap: nowrap; gap: 4px; }
 .p3-sw button, .p3-custom { width: 18px; height: 18px; flex-shrink: 0; }
 .p3-cname { width: 34px; }
+
+/* ============================================================
+   My location
+   ============================================================ */
+#btn-locate.active { color: #3B82F6; box-shadow: 0 0 0 2px rgba(59,130,246,.45), var(--shadow-sm); }
+#btn-locate.loading svg { animation: p3spin 1s linear infinite; color: #3B82F6; }
+.m-card-dist { margin-top: 2px; font-size: 11px; font-weight: 700; color: #60A5FA; font-variant-numeric: tabular-nums; white-space: nowrap; }
+html[data-theme="light"] .m-card-dist { color: #2563EB; }
+.list-near {
+  display: flex; align-items: center; gap: 8px; margin: 2px 4px 10px; padding: 9px 12px;
+  border-radius: 12px; font-size: 12.5px; font-weight: 700; color: var(--text-2);
+  background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.28);
+}
+.list-near-dot { width: 9px; height: 9px; border-radius: 50%; background: #3B82F6; box-shadow: 0 0 0 3px rgba(59,130,246,.25); flex-shrink: 0; }
+.d-dist {
+  display: inline-flex; align-items: center; gap: 7px; margin: 8px 0 2px; padding: 5px 10px 5px 8px;
+  border-radius: 999px; font-size: 12.5px; font-weight: 700; color: #60A5FA;
+  background: rgba(59,130,246,.12); border: 1px solid rgba(59,130,246,.3);
+}
+html[data-theme="light"] .d-dist { color: #1D4ED8; }
+.d-dist svg { width: 14px; height: 14px; flex-shrink: 0; }
+.d-dist a { color: inherit; text-decoration: underline; text-underline-offset: 2px; margin-left: 2px; font-weight: 800; }

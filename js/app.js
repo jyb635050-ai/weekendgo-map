@@ -335,7 +335,7 @@ function buildPeakLayers() {
     hoverId = f.properties.id;
     map.setFeatureState({ source: "peaks", id: hoverId }, { hover: true });
     const m = mountains.find((x) => x.id === hoverId);
-    tip.innerHTML = `<b>${esc(loc(m.name))}</b><span>${m.elevation_m.toLocaleString()} m · ${m.difficulty}/9</span>`;
+    tip.innerHTML = `<b>${esc(loc(m.name))}</b><span>${m.elevation_m.toLocaleString()} m · ${m.difficulty}/9${userPos ? ` · ${esc(t("loc.away").replace("{d}", fmtKm(distKm(m))))}` : ""}</span>`;
     tip.style.left = `${e.point.x}px`;
     tip.style.top = `${e.point.y}px`;
     tip.hidden = false;
@@ -404,7 +404,8 @@ const CAUTION_IDS = () => mountains.filter((m) => m.status_level === "caution").
 const SORT_MODES = ["elevation", "difficulty", "name"];
 function sortList(vis) {
   const arr = [...vis];
-  if (sortMode === "difficulty") arr.sort((a, b) => b.difficulty - a.difficulty || b.elevation_m - a.elevation_m);
+  if (sortMode === "distance" && userPos) arr.sort((a, b) => distKm(a) - distKm(b));
+  else if (sortMode === "difficulty") arr.sort((a, b) => b.difficulty - a.difficulty || b.elevation_m - a.elevation_m);
   else if (sortMode === "name") arr.sort((a, b) => loc(a.name).localeCompare(loc(b.name), LANG === "zh" ? "zh-Hans-CN" : "en"));
   else arr.sort((a, b) => b.elevation_m - a.elevation_m);
   return arr;
@@ -429,7 +430,12 @@ function renderList(vis) {
   const animCls = listAnimated ? "no-anim" : "";
   listAnimated = true;
   const sorted = sortList(vis);
-  body.innerHTML = sorted.map((m, i) => `
+  let near = "";
+  if (userPos && sortMode === "distance") {
+    const n50 = vis.filter((m) => distKm(m) <= 50).length, n100 = vis.filter((m) => distKm(m) <= 100).length;
+    near = `<div class="list-near"><span class="list-near-dot"></span>${esc(t("list.near").replace("{a}", n50).replace("{b}", n100))}</div>`;
+  }
+  body.innerHTML = near + sorted.map((m, i) => `
     <button class="m-card ${m.id === activeId ? "active" : ""} ${animCls}" data-id="${esc(m.id)}" style="--i:${Math.min(i, 20)}">
       <div class="m-card-bar" style="background:${diffColor(m.difficulty)}"></div>
       <div class="m-card-main">
@@ -439,6 +445,7 @@ function renderList(vis) {
       <div class="m-card-right">
         <div class="m-card-elev">${m.elevation_m.toLocaleString()}<small> m</small></div>
         <div class="m-card-diff" style="color:${diffColor(m.difficulty)}">${m.difficulty}/9</div>
+        ${userPos ? `<div class="m-card-dist">${fmtKm(distKm(m))} km</div>` : ""}
       </div>
     </button>
   `).join("");
@@ -475,6 +482,11 @@ function renderDetail(m) {
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 10c0 6-8 12-8 12s-8-6-8-12a8 8 0 0 1 16 0Z"/><circle cx="12" cy="10" r="3"/></svg>
       ${esc(t("region." + m.region_key))} · ${esc(loc(m.province))}
     </div>
+    ${userPos ? `<div class="d-dist">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"/><path d="M12 2v3m0 14v3M2 12h3m14 0h3"/></svg>
+      <span>${esc(t("d.dist").replace("{d}", fmtKm(distKm(m))))}</span>
+      <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" rel="noopener noreferrer">${esc(t("d.navigate"))}</a>
+    </div>` : ""}
     <h2 class="d-name">${esc(loc(m.name))}</h2>
     <div class="d-name-alt">${esc(LANG === "zh" ? (m.name.en || "") : (m.name.zh || ""))}</div>
 
@@ -642,6 +654,7 @@ function closeDetail() {
   setActivePeak(null);
   stopOrbit();
   clearTrailLayers();
+  if (userPos) drawLink(null);
   highlightActiveCard();
 }
 
@@ -1019,6 +1032,109 @@ async function showTrail(m, keepActive = false) {
 }
 
 /* ============================================================
+   MY LOCATION — browser geolocation, kept in memory only
+   (never stored, never sent anywhere; distances are straight-line)
+   ============================================================ */
+let userPos = null;            // { lng, lat, acc }
+const ME_BLUE = "#3B82F6";
+const distKm = (m) => (userPos ? hav([userPos.lng, userPos.lat], m.coords) / 1000 : null);
+const fmtKm = (km) => (km < 10 ? km.toFixed(1) : Math.round(km).toLocaleString("en-US"));
+const inPhilippines = (p) => p.lng > PH_BOUNDS[0][0] && p.lng < PH_BOUNDS[1][0] && p.lat > PH_BOUNDS[0][1] && p.lat < PH_BOUNDS[1][1];
+
+function drawMe() {
+  const pt = { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: [userPos.lng, userPos.lat] } };
+  if (map.getSource("me")) { map.getSource("me").setData(pt); }
+  else {
+    map.addSource("me", { type: "geojson", data: pt });
+    map.addLayer({
+      id: "me-acc", type: "circle", source: "me",
+      paint: { "circle-color": ME_BLUE, "circle-opacity": 0.12, "circle-stroke-color": ME_BLUE, "circle-stroke-opacity": 0.35,
+        "circle-stroke-width": 1, "circle-pitch-alignment": "map", "circle-radius": 0 },
+    });
+    map.addLayer({
+      id: "me-dot", type: "circle", source: "me",
+      paint: { "circle-color": ME_BLUE, "circle-radius": 7, "circle-stroke-color": "#FFFFFF", "circle-stroke-width": 3 },
+    });
+  }
+  // accuracy ring in metres -> pixels at every zoom (web-mercator scale doubles per zoom level)
+  const m0 = 156543.03 * Math.cos(userPos.lat * Math.PI / 180);
+  const r0 = Math.min(userPos.acc || 0, 5000) / m0;
+  map.setPaintProperty("me-acc", "circle-radius", ["interpolate", ["exponential", 2], ["zoom"], 0, r0, 22, r0 * 2 ** 22]);
+}
+
+/* dashed line from me to the selected mountain, with "N km away" above its summit */
+function drawLink(m) {
+  const empty = { type: "FeatureCollection", features: [] };
+  const data = !userPos || !m ? empty : {
+    type: "FeatureCollection",
+    features: [
+      { type: "Feature", properties: {}, geometry: { type: "LineString", coordinates: [[userPos.lng, userPos.lat], m.coords] } },
+      { type: "Feature", properties: { label: t("loc.away").replace("{d}", fmtKm(distKm(m))) },
+        geometry: { type: "Point", coordinates: m.coords } },
+    ],
+  };
+  if (map.getSource("me-link")) { map.getSource("me-link").setData(data); return; }
+  if (!userPos) return;
+  map.addSource("me-link", { type: "geojson", data });
+  map.addLayer({
+    id: "me-link-line", type: "line", source: "me-link", filter: ["==", ["geometry-type"], "LineString"],
+    layout: { "line-cap": "round" },
+    paint: { "line-color": ME_BLUE, "line-width": 2.4, "line-opacity": 0.85, "line-dasharray": [1.5, 1.5] },
+  }, "me-acc");
+  map.addLayer({
+    id: "me-link-label", type: "symbol", source: "me-link", filter: ["==", ["geometry-type"], "Point"],
+    layout: {
+      "text-field": ["get", "label"], "text-font": ["Noto Sans CJK JP Regular"], "text-size": 13,
+      "text-anchor": "bottom", "text-offset": [0, -1.3], "text-allow-overlap": true, "text-ignore-placement": true,
+    },
+    paint: { "text-color": "#FFFFFF", "text-halo-color": ME_BLUE, "text-halo-width": 2.2 },
+  });
+}
+
+/* frame me + the nearest few mountains */
+function fitNearby(near) {
+  const b = new maplibregl.LngLatBounds();
+  b.extend([userPos.lng, userPos.lat]);
+  near.forEach((m) => b.extend(m.coords));
+  const mobile = window.matchMedia("(max-width: 860px)").matches;
+  const listOpen = !$("#list-drawer").classList.contains("closed");
+  const padding = mobile ? { top: 90, bottom: 90, left: 40, right: 70 }
+    : { top: 110, bottom: 80, left: listOpen ? 400 : 90, right: $("#detail").classList.contains("open") ? 480 : 100 };
+  const cam = map.cameraForBounds(b, { padding, bearing: 0 });
+  if (!cam) return;
+  stopOrbit();
+  map.flyTo({ center: cam.center, zoom: Math.min(11.5, cam.zoom - 0.3), pitch: 35, bearing: 0,
+    duration: prefersReducedMotion ? 0 : 2000, essential: true });
+}
+
+function locateMe() {
+  const btn = $("#btn-locate");
+  if (!("geolocation" in navigator) || !window.isSecureContext) { toast(t("loc.unsupported")); return; }
+  if (btn.classList.contains("loading")) return;
+  btn.classList.add("loading");
+  navigator.geolocation.getCurrentPosition((pos) => {
+    btn.classList.remove("loading");
+    btn.classList.add("active");
+    userPos = { lng: pos.coords.longitude, lat: pos.coords.latitude, acc: pos.coords.accuracy };
+    drawMe();
+    if (!SORT_MODES.includes("distance")) SORT_MODES.unshift("distance");
+    sortMode = "distance";
+    const near = [...mountains].sort((a, b) => distKm(a) - distKm(b));
+    const active = activeId && mountains.find((x) => x.id === activeId);
+    if (!window.matchMedia("(max-width: 860px)").matches) setDrawer(true);
+    applyFilters();
+    if (active) { renderDetail(active); drawLink(active); showTrail(active, true); loadWeather(active); }
+    else if (inPhilippines(userPos)) fitNearby(near.slice(0, 5));
+    toast(inPhilippines(userPos)
+      ? t("loc.nearest").replace("{m}", loc(near[0].name)).replace("{d}", fmtKm(distKm(near[0])))
+      : t("loc.outside").replace("{d}", fmtKm(distKm(near[0]))), 4200);
+  }, (err) => {
+    btn.classList.remove("loading");
+    toast(t(err.code === 1 ? "loc.denied" : err.code === 3 ? "loc.timeout" : "loc.unavailable"), 4200);
+  }, { enableHighAccuracy: true, timeout: 15000, maximumAge: 60000 });
+}
+
+/* ============================================================
    SELECTION & CAMERA
    ============================================================ */
 function flyToMountain(m) {
@@ -1099,6 +1215,7 @@ function selectMountain(id) {
   highlightActiveCard();
   showTrail(m);
   loadWeather(m);
+  drawLink(m);
   flyToMountain(m);
   // on mobile, close the list sheet so the map + detail are visible
   if (window.matchMedia("(max-width: 860px)").matches) setDrawer(false);
@@ -1209,6 +1326,7 @@ function bindUI() {
   $("#btn-list-close").addEventListener("click", () => setDrawer(false));
   $("#btn-detail-close").addEventListener("click", closeDetail);
 
+  $("#btn-locate").addEventListener("click", locateMe);
   $("#btn-home-view").addEventListener("click", () => {
     closeDetail();
     map.flyTo({ ...HOME_VIEW, duration: prefersReducedMotion ? 0 : 2600, essential: true });
@@ -1285,7 +1403,7 @@ function bindUI() {
     applyFilters();
     if (activeId) {
       const m = mountains.find((x) => x.id === activeId);
-      if (m) { renderDetail(m); showTrail(m, true); loadWeather(m); }
+      if (m) { renderDetail(m); showTrail(m, true); loadWeather(m); if (userPos) drawLink(m); }
     }
   });
 }

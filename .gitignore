@@ -3,3 +3,4 @@ tools/.cache/
 __pycache__/
 *.pyc
 out/
+.claude/
