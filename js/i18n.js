@@ -165,6 +165,11 @@ const I18N = {
     "mark.all": "全部",
     "mark.deviceNote": "记录仅保存在本机浏览器",
     "mark.progress": "已登顶",
+    "flag.planted": "🚩 插旗成功：{m}！这是你登顶的第 {n} 座山",
+    "flag.badge": "座已登顶",
+    "flag.highest": "最高：{m} {e} m",
+    "flag.none": "打开一座山，点「已登顶」插上第一面旗",
+    "flag.badgeTip": "我的登顶记录 · 点击查看已登顶的山（记录保存在本机浏览器）",
 
     "sort.elevation": "海拔",
     "sort.difficulty": "难度",
@@ -333,6 +338,11 @@ const I18N = {
     "mark.all": "All",
     "mark.deviceNote": "Saved in this browser only",
     "mark.progress": "Climbed",
+    "flag.planted": "🚩 Flag planted on {m}! That's summit #{n}",
+    "flag.badge": "climbed",
+    "flag.highest": "Highest: {m} {e} m",
+    "flag.none": "Open a mountain and tap “Climbed” to plant your first flag",
+    "flag.badgeTip": "My summit record · click to list the mountains you've climbed (saved in this browser)",
 
     "sort.elevation": "Elevation",
     "sort.difficulty": "Difficulty",

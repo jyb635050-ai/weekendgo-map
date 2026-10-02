@@ -49,11 +49,116 @@ try {
   }
 } catch (e) { marks = {}; }
 function setMark(id, val) {
+  const wasDone = marks[id] === "done";
   if (marks[id] === val) delete marks[id];      // toggle off
   else if (val) marks[id] = val;
   else delete marks[id];
   localStorage.setItem("wg-marks", JSON.stringify(marks));
   applyFilters();
+  const isDone = marks[id] === "done";
+  if (isDone && !wasDone) plantFlag(id);
+  else updateFlags();
+  updateSummitBadge(isDone && !wasDone);
+}
+
+/* ---------- summit flags + "climbed" record ---------- */
+const doneIds = () => Object.keys(marks).filter((k) => marks[k] === "done");
+
+/* a small waving flag on a pole, drawn once at 2x (pole base = bottom-left corner + 3 px) */
+function flagImage() {
+  const W = 72, H = 92, c = document.createElement("canvas");
+  c.width = W; c.height = H;
+  const g = c.getContext("2d");
+  // pole
+  g.lineCap = "round";
+  g.strokeStyle = "rgba(10,15,28,.85)"; g.lineWidth = 7;
+  g.beginPath(); g.moveTo(6, 10); g.lineTo(6, 89); g.stroke();
+  g.strokeStyle = "#F8FAFC"; g.lineWidth = 3.6;
+  g.beginPath(); g.moveTo(6, 10); g.lineTo(6, 88); g.stroke();
+  // cloth with a wave
+  const cloth = new Path2D();
+  cloth.moveTo(8, 10);
+  cloth.bezierCurveTo(26, 2, 42, 18, 66, 10);
+  cloth.lineTo(62, 28); cloth.lineTo(68, 44);
+  cloth.bezierCurveTo(44, 52, 28, 36, 8, 44);
+  cloth.closePath();
+  const grad = g.createLinearGradient(8, 0, 68, 0);
+  grad.addColorStop(0, "#EA580C"); grad.addColorStop(1, "#FB923C");
+  g.fillStyle = grad; g.fill(cloth);
+  g.strokeStyle = "#FFFFFF"; g.lineWidth = 3; g.lineJoin = "round"; g.stroke(cloth);
+  // little white peak on the cloth
+  g.fillStyle = "#FFFFFF";
+  g.beginPath(); g.moveTo(20, 36); g.lineTo(31, 19); g.lineTo(37, 28); g.lineTo(41, 23); g.lineTo(50, 35); g.closePath(); g.fill();
+  // pole tip
+  g.fillStyle = "#FACC15"; g.beginPath(); g.arc(6, 8, 4.5, 0, Math.PI * 2); g.fill();
+  return g.getImageData(0, 0, W, H);
+}
+
+function updateFlags(except) {
+  if (!map || !map.getLayer("peaks-flag")) return;
+  const ids = doneIds().filter((id) => id !== except);
+  map.setFilter("peaks-flag", ["in", ["get", "id"], ["literal", ids]]);
+}
+
+/* planting: the new flag springs up out of the summit with a ring pulse, then joins the others */
+let plantTimer = null;
+function plantFlag(id) {
+  const m = mountains.find((x) => x.id === id);
+  if (!m || !map || !map.getLayer("peaks-flag")) return;
+  const n = doneIds().length;
+  toast(t("flag.planted").replace("{m}", loc(m.name)).replace("{n}", n), 3600);
+  const pt = { type: "Feature", properties: {}, geometry: { type: "Point", coordinates: m.coords } };
+  if (!map.getSource("flag-plant")) {
+    map.addSource("flag-plant", { type: "geojson", data: pt });
+    map.addLayer({
+      id: "flag-ring", type: "circle", source: "flag-plant",
+      paint: { "circle-color": "rgba(0,0,0,0)", "circle-stroke-color": "#FB923C", "circle-stroke-width": 3,
+        "circle-radius": 0, "circle-stroke-opacity": 0 },
+    }, "peaks-flag");
+    map.addLayer({
+      id: "flag-plant", type: "symbol", source: "flag-plant",
+      layout: { "icon-image": "summit-flag", "icon-anchor": "bottom-left", "icon-offset": [-3, 1], "icon-size": 0,
+        "icon-allow-overlap": true, "icon-ignore-placement": true },
+    });
+  } else map.getSource("flag-plant").setData(pt);
+  updateFlags(id);
+  clearTimeout(plantTimer);
+  const T = prefersReducedMotion ? 1 : 900, t0 = performance.now();
+  const finish = () => {
+    map.setLayoutProperty("flag-plant", "icon-size", 0);
+    map.setPaintProperty("flag-ring", "circle-stroke-opacity", 0);
+    updateFlags();
+  };
+  const step = (now) => {
+    const k = Math.min(1, (now - t0) / T);
+    // overshoot spring: 0 -> 1.25 -> 1
+    const s = k < 0.6 ? (k / 0.6) * 1.25 : 1.25 - 0.25 * ((k - 0.6) / 0.4);
+    map.setLayoutProperty("flag-plant", "icon-size", Math.max(0.01, s));
+    map.setPaintProperty("flag-ring", "circle-radius", 6 + 44 * k);
+    map.setPaintProperty("flag-ring", "circle-stroke-opacity", 0.9 * (1 - k));
+    if (k < 1) requestAnimationFrame(step); else finish();
+  };
+  requestAnimationFrame(step);
+  plantTimer = setTimeout(finish, T + 1500);         // background tabs don't run rAF
+}
+
+function updateSummitBadge(bump) {
+  const el = $("#summit-badge");
+  if (!el) return;
+  const done = mountains.filter((m) => marks[m.id] === "done");
+  const total = mountains.length;
+  const top = done.reduce((a, m) => (!a || m.elevation_m > a.elevation_m ? m : a), null);
+  el.innerHTML = `
+    <span class="sb-flag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 21V4"/><path d="M5 4c5-2.5 8 2.5 14 0v9c-6 2.5-9-2.5-14 0"/></svg></span>
+    <span class="sb-main">
+      <span class="sb-line"><b>${done.length}</b><span class="sb-of">/ ${total}</span><span class="sb-lbl">${esc(t("flag.badge"))}</span></span>
+      <span class="sb-bar"><i style="width:${(done.length / Math.max(1, total) * 100).toFixed(1)}%"></i></span>
+      <span class="sb-sub">${top
+        ? esc(t("flag.highest").replace("{m}", loc(top.name)).replace("{e}", top.elevation_m.toLocaleString("en-US")))
+        : esc(t("flag.none"))}</span>
+    </span>`;
+  el.title = t("flag.badgeTip");
+  if (bump) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
 }
 
 let sortMode = "elevation";    // elevation | difficulty | name
@@ -301,6 +406,17 @@ function buildPeakLayers() {
       "circle-color": ["get", "color"],
       "circle-stroke-width": activeCase(2.5, 1.8),
       "circle-stroke-color": "rgba(255,255,255,0.95)",
+    },
+  });
+  // summit flags on every mountain marked "climbed" (canvas symbols stay glued to 3D terrain)
+  if (!map.hasImage("summit-flag")) map.addImage("summit-flag", flagImage(), { pixelRatio: 2 });
+  map.addLayer({
+    id: "peaks-flag", type: "symbol", source: "peaks",
+    filter: ["in", ["get", "id"], ["literal", doneIds()]],
+    layout: {
+      "icon-image": "summit-flag", "icon-anchor": "bottom-left", "icon-offset": [-3, 1],
+      "icon-size": ["interpolate", ["linear"], ["zoom"], 5, 0.62, 9, 0.85, 12, 1],
+      "icon-allow-overlap": true, "icon-ignore-placement": true,
     },
   });
   map.addLayer({
@@ -1253,7 +1369,8 @@ function setDrawer(open) {
 }
 
 function revealUI() {
-  ["#topbar", "#hud", "#legend"].forEach((s) => { $(s).classList.remove("ui-hidden"); $(s).setAttribute("aria-hidden", "false"); });
+  updateSummitBadge();                    // mountains are loaded by now
+  ["#topbar", "#hud", "#legend", "#summit-badge"].forEach((s) => { $(s).classList.remove("ui-hidden"); $(s).setAttribute("aria-hidden", "false"); });
   setDrawer(!window.matchMedia("(max-width: 860px)").matches);
 }
 
@@ -1383,6 +1500,14 @@ function bindUI() {
   const qrImg = joinModal.querySelector(".join-qr img");
   if (qrImg) qrImg.addEventListener("error", () => qrImg.closest(".join-qr").classList.add("noimg"));
 
+  // summit record badge -> the "climbed" list
+  updateSummitBadge();
+  $("#summit-badge").addEventListener("click", () => {
+    filters.mark = "done";
+    applyFilters();
+    setDrawer(true);
+  });
+
   // mark tabs (all / want / done)
   $("#mark-tabs").addEventListener("click", (e) => {
     const b = e.target.closest(".mtab");
@@ -1421,6 +1546,7 @@ function bindUI() {
 
   document.addEventListener("wg:langchange", () => {
     populateRegionSelect();
+    updateSummitBadge();
     refreshMarkerLabels();
     applyFilters();
     if (activeId) {
