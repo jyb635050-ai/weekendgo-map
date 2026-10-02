@@ -1,6 +1,6 @@
 # WeekendGo · 那我走 — 菲律宾徒步 3D 地图
 
-Philippines National Hiking Map — 69 mountains across Luzon, Visayas, Mindanao and Palawan on an interactive 3D terrain map.
+Philippines National Hiking Map — 79 mountains across Luzon, Visayas, Mindanao and Palawan on an interactive 3D terrain map.
 
 **Live site:** https://jyb635050-ai.github.io/weekendgo-map/
 

@@ -476,6 +476,11 @@ def zh_name(en):
 
 # ---------------------------------------------------------------- per mountain
 def build(m, log):
+    # mountains whose OSM network was checked by hand and only yields misleading lines
+    # (wrong side of the mountain, never reaching the summit) carry "trail_skip": "<reason>"
+    if m.get("trail_skip"):
+        log.append(f"    - skipped: {m['trail_skip']}")
+        return [], None
     lng, lat = m["coords"]
     peak = (lng, lat)
     # hikes whose real destination isn't the summit node (crater rims, lake shores)
