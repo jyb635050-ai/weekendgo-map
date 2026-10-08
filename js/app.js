@@ -156,8 +156,9 @@ function updateSummitBadge(bump) {
       <span class="sb-sub">${top
         ? esc(t("flag.highest").replace("{m}", loc(top.name)).replace("{e}", top.elevation_m.toLocaleString("en-US")))
         : esc(t("flag.none"))}</span>
-    </span>`;
-  el.title = t("flag.badgeTip");
+    </span>
+    <span class="sb-cta">${esc(t("rp.cta"))}<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="m9 6 6 6-6 6"/></svg></span>`;
+  el.title = t("rp.badgeTip");
   if (bump) { el.classList.remove("bump"); void el.offsetWidth; el.classList.add("bump"); }
 }
 
@@ -1289,6 +1290,24 @@ function flyToMountain(m) {
 }
 
 const SITE_URL = "https://jyb635050-ai.github.io/weekendgo-map/";
+/* summit report card (lazy module) */
+let reportMod = null;
+async function openReport(btn) {
+  btn.classList.add("loading");
+  try {
+    reportMod = reportMod || await import(new URL("js/report.js", document.baseURI).href);
+    reportMod.openReport({
+      mountains, marks, t, loc, toast, lang: () => LANG,
+      showList: () => { filters.mark = "done"; applyFilters(); setDrawer(true); },
+    });
+  } catch (err) {
+    console.error(err);
+    toast(t("rp.loadFail"));
+  } finally {
+    btn.classList.remove("loading");
+  }
+}
+
 let print3dMod = null;
 let print3dWarm = false;
 /* the 3D dialog is six ES modules (~2.7 MB incl. three.js); fetched lazily they load one import level
@@ -1502,11 +1521,7 @@ function bindUI() {
 
   // summit record badge -> the "climbed" list
   updateSummitBadge();
-  $("#summit-badge").addEventListener("click", () => {
-    filters.mark = "done";
-    applyFilters();
-    setDrawer(true);
-  });
+  $("#summit-badge").addEventListener("click", () => openReport($("#summit-badge")));
 
   // mark tabs (all / want / done)
   $("#mark-tabs").addEventListener("click", (e) => {
